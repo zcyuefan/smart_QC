@@ -233,7 +233,7 @@ API.txt for details.
 						var size = spec[i][0];
 						var unit = spec[i][1];
 
-						// special-case the possibility of several years
+						// special-test_api the possibility of several years
 
 						if (unit == "year") {
 

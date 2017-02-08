@@ -84,7 +84,7 @@
                 // Update number of total forms
                 $(totalForms).val(parseInt(totalForms.val(), 10) + 1);
                 nextIndex += 1;
-                // Hide add button in case we've hit the max, except we want to add infinitely
+                // Hide add button in test_api we've hit the max, except we want to add infinitely
                 if ((maxForms.val() !== '') && (maxForms.val() - totalForms.val()) <= 0) {
                     addButton.parent().hide();
                 }

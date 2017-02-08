@@ -68,7 +68,7 @@
 	Multiselect.prototype = {
 		
 		defaults: {
-			// Default text function will either print 'None selected' in case no option is selected,
+			// Default text function will either print 'None selected' in test_api no option is selected,
 			// or a list of the selected options up to a length of 3 selected options.
 			// If more than 3 options are selected, the number of selected options is printed.
 			buttonText: function(options, select) {

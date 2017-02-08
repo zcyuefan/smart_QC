@@ -60,10 +60,10 @@ $.widget = function( name, base, prototype ) {
 	// extend with the existing constructor to carry over any static properties
 	$.extend( constructor, existingConstructor, {
 		version: prototype.version,
-		// copy the object used to create the prototype in case we need to
+		// copy the object used to create the prototype in test_api we need to
 		// redefine the widget later
 		_proto: $.extend( {}, prototype ),
-		// track widgets that inherit from this widget in case this widget is
+		// track widgets that inherit from this widget in test_api this widget is
 		// redefined after a widget inherits from it
 		_childConstructors: []
 	});

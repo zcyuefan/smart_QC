@@ -3305,7 +3305,7 @@
 				if (!value && !settings.allowEmptyOption) return;
 	
 				// if the option already exists, it's probably been
-				// duplicated in another optgroup. in this case, push
+				// duplicated in another optgroup. in this test_api, push
 				// the current group to the "optgroup" property on the
 				// existing option so that it's rendered in both places.
 				if (optionsMap.hasOwnProperty(value)) {

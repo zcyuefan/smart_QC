@@ -4,4 +4,4 @@ from django.apps import AppConfig
 
 
 class TestManageConfig(AppConfig):
-    name = 'smart_QC.apps.case'
+    name = 'smart_QC.apps.test_unit'

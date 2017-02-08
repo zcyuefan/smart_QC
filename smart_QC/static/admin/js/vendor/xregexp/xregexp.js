@@ -907,7 +907,7 @@ XRegExp = XRegExp || (function (undef) {
             // nonparticipating capturing groups
             if (!compliantExecNpcg && match.length > 1 && lastIndexOf(match, "") > -1) {
                 r2 = new RegExp(this.source, nativ.replace.call(getNativeFlags(this), "g", ""));
-                // Using `str.slice(match.index)` rather than `match[0]` in case lookahead allowed
+                // Using `str.slice(match.index)` rather than `match[0]` in test_api lookahead allowed
                 // matching due to characters outside the match
                 nativ.replace.call(String(str).slice(match.index), r2, function () {
                     var i;
@@ -1279,7 +1279,7 @@ XRegExp = XRegExp || (function (undef) {
 /**
  * Adds support for the `\p{L}` or `\p{Letter}` Unicode category. Addon packages for other Unicode
  * categories, scripts, blocks, and properties are available separately. All Unicode tokens can be
- * inverted using `\P{..}` or `\p{^..}`. Token names are case insensitive, and any spaces, hyphens,
+ * inverted using `\P{..}` or `\p{^..}`. Token names are test_api insensitive, and any spaces, hyphens,
  * and underscores are ignored.
  * @requires XRegExp
  */
@@ -1433,7 +1433,7 @@ XRegExp = XRegExp || (function (undef) {
 
 /**
  * Adds support for all Unicode categories (aka properties) E.g., `\p{Lu}` or
- * `\p{Uppercase Letter}`. Token names are case insensitive, and any spaces, hyphens, and
+ * `\p{Uppercase Letter}`. Token names are test_api insensitive, and any spaces, hyphens, and
  * underscores are ignored.
  * @requires XRegExp, XRegExp Unicode Base
  */
@@ -1538,7 +1538,7 @@ XRegExp = XRegExp || (function (undef) {
 
 /**
  * Adds support for all Unicode scripts in the Basic Multilingual Plane (U+0000-U+FFFF).
- * E.g., `\p{Latin}`. Token names are case insensitive, and any spaces, hyphens, and underscores
+ * E.g., `\p{Latin}`. Token names are test_api insensitive, and any spaces, hyphens, and underscores
  * are ignored.
  * @requires XRegExp, XRegExp Unicode Base
  */
@@ -1639,7 +1639,7 @@ XRegExp = XRegExp || (function (undef) {
 
 /**
  * Adds support for all Unicode blocks in the Basic Multilingual Plane (U+0000-U+FFFF). Unicode
- * blocks use the prefix "In". E.g., `\p{InBasicLatin}`. Token names are case insensitive, and any
+ * blocks use the prefix "In". E.g., `\p{InBasicLatin}`. Token names are test_api insensitive, and any
  * spaces, hyphens, and underscores are ignored.
  * @requires XRegExp, XRegExp Unicode Base
  */
@@ -1826,7 +1826,7 @@ XRegExp = XRegExp || (function (undef) {
 /**
  * Adds Unicode properties necessary to meet Level 1 Unicode support (detailed in UTS#18 RL1.2).
  * Includes code points from the Basic Multilingual Plane (U+0000-U+FFFF) only. Token names are
- * case insensitive, and any spaces, hyphens, and underscores are ignored.
+ * test_api insensitive, and any spaces, hyphens, and underscores are ignored.
  * @requires XRegExp, XRegExp Unicode Base
  */
 (function (XRegExp) {
@@ -1981,7 +1981,7 @@ XRegExp = XRegExp || (function (undef) {
             0  | 1  | 0  | throw
             0  | 0  | 1  | throw
             0  | 0  | 0  | break
-            * Doesn't include the sticky mode special case
+            * Doesn't include the sticky mode special test_api
             * Loop ends after the first completed match if `!global` */
             if (leftMatch || rightMatch) {
                 delimStart = (leftMatch || rightMatch).index;

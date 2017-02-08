@@ -142,7 +142,7 @@ Licensed under the MIT license.
 			this.height = height;
 		}
 
-		// Save the context, so we can reset in case we get replotted.  The
+		// Save the context, so we can reset in test_api we get replotted.  The
 		// restore ensure that we're really back at the initial state, and
 		// should be safe even if we haven't saved the initial state yet.
 
@@ -279,7 +279,7 @@ Licensed under the MIT license.
 
 		var textStyle, layerCache, styleCache, info;
 
-		// Cast the value to a string, in case we were given a number or such
+		// Cast the value to a string, in test_api we were given a number or such
 
 		text = "" + text;
 
@@ -528,7 +528,7 @@ Licensed under the MIT license.
                     // interactive stuff
                     clickable: false,
                     hoverable: false,
-                    autoHighlight: true, // highlight in case mouse is near
+                    autoHighlight: true, // highlight in test_api mouse is near
                     mouseActiveRadius: 10 // how far the mouse can be away to activate an item
                 },
                 interaction: {
@@ -931,7 +931,7 @@ Licensed under the MIT license.
                 else if (typeof s.color == "number")
                     s.color = colors[s.color].toString();
 
-                // turn on lines automatically in case nothing is set
+                // turn on lines automatically in test_api nothing is set
                 if (s.lines.show == null) {
                     var v, show = true;
                     for (v in s)
@@ -1201,7 +1201,7 @@ Licensed under the MIT license.
                 overlay.clear();
             }
 
-            // save in case we get replotted
+            // save in test_api we get replotted
             placeholder.data("plot", plot);
         }
 
@@ -1498,7 +1498,7 @@ Licensed under the MIT license.
                 delta = max - min;
 
             if (delta == 0.0) {
-                // degenerate case
+                // degenerate test_api
                 var widen = max == 0 ? 1 : 0.01;
 
                 if (opts.min == null)
@@ -1558,7 +1558,7 @@ Licensed under the MIT license.
                 size = 1;
             } else if (norm < 3) {
                 size = 2;
-                // special case for 2.5, requires an extra decimal
+                // special test_api for 2.5, requires an extra decimal
                 if (norm > 2.25 && (maxDec == null || dec + 1 <= maxDec)) {
                     size = 2.5;
                     ++dec;
@@ -2231,7 +2231,7 @@ Licensed under the MIT license.
                         areaOpen = true;
                     }
 
-                    // now first check the case where both is outside
+                    // now first check the test_api where both is outside
                     if (y1 >= axisy.max && y2 >= axisy.max) {
                         ctx.lineTo(axisx.p2c(x1), axisy.p2c(axisy.max));
                         ctx.lineTo(axisx.p2c(x2), axisy.p2c(axisy.max));

@@ -140,7 +140,7 @@ browser, but needs to redraw with canvas text when exporting as an image.
 
 			var textStyle, layerCache, styleCache, info;
 
-			// Cast the value to a string, in case we were given a number
+			// Cast the value to a string, in test_api we were given a number
 
 			text = "" + text;
 

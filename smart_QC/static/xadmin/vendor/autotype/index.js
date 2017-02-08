@@ -139,7 +139,7 @@
                     // modify the current character if there are active modifiers
                     if((activeModifiers.shift && isLower(character)) || 
                         (!activeModifiers.shift && isUpper(character))) {
-                        // shift converts case
+                        // shift converts test_api
                         character = convertCase(character);
                     }
                     

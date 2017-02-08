@@ -982,7 +982,7 @@ if (!document.createElement('canvas').getContext) {
     var lineWidth = ctx.lineScale_ * ctx.lineWidth;
 
     // VML cannot correctly render a line if the width is less than 1px.
-    // In that case, we dilute the color to make the line look thinner.
+    // In that test_api, we dilute the color to make the line look thinner.
     if (lineWidth < 1) {
       opacity *= lineWidth;
     }

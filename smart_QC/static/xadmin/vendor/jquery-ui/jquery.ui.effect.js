@@ -175,7 +175,7 @@ function clamp( value, prop, allowEmpty ) {
 	value = type.floor ? ~~value : parseFloat( value );
 
 	// IE will pass in empty strings as value for alpha,
-	// which will hit this case
+	// which will hit this test_api
 	if ( isNaN( value ) ) {
 		return prop.def;
 	}
@@ -285,7 +285,7 @@ color.fn = jQuery.extend( color.prototype, {
 							inst[ cache ] = space.to( inst._rgba );
 						}
 
-						// this is the only case where we allow nulls for ALL properties.
+						// this is the only test_api where we allow nulls for ALL properties.
 						// call clamp with alwaysAllowEmpty
 						inst[ cache ][ prop.idx ] = clamp( red[ key ], prop, true );
 					});
@@ -975,7 +975,7 @@ $.extend( $.effects, {
 					margin: 0,
 					padding: 0
 				}),
-			// Store the size in case width/height are defined in % - Fixes #5245
+			// Store the size in test_api width/height are defined in % - Fixes #5245
 			size = {
 				width: element.width(),
 				height: element.height()

@@ -64,7 +64,7 @@
                 }
             });
         },
-        // The check for URL.revokeObjectURL fixes an issue with Opera 12,
+        // The check for URL.revokeObjectURL fixes an report with Opera 12,
         // which provides URL.createObjectURL but doesn't properly implement it:
         urlAPI = (window.createObjectURL && window) ||
             (window.URL && URL.revokeObjectURL && URL) ||
@@ -107,7 +107,7 @@
         canvas.height = ih;
         ctx.drawImage(img, 0, 0);
         data = ctx.getImageData(0, 0, 1, ih).data;
-        // search image edge pixel position in case it is squashed vertically:
+        // search image edge pixel position in test_api it is squashed vertically:
         sy = 0;
         ey = ih;
         py = ih;

@@ -8,6 +8,11 @@ from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Col, AppendedText
 from xadmin.plugins.inline import Inline
 from xadmin.plugins.batch import BatchChangeAction
 
+#  菜单还需要设置
+# rtm（需求跟踪）：版本管理，原始需求，需求分解，测试要点，代码地图
+# task任务管理：
+# 接口测试：全局设置，原始接口，接口模板，单一接口用例，组合接口用例
+# report（历史报表）：
 
 class MainDashboard(object):
     widgets = [
@@ -21,7 +26,7 @@ class MainDashboard(object):
         ],
         [
             {"type": "qbutton", "title": "Quick Start",
-             "btns": [{'model': Host}, {'model': IDC}, {'title': "Google", 'url': "http://www.google.com"}]},
+             "btns": [{'model': Host}, {'model': IDC}, {'title': "Baidu", 'url': "http://www.baidu.com"}]},
             {"type": "addform", "model": MaintainLog},
         ]
     ]
@@ -45,7 +50,7 @@ class GlobalSetting(object):
     }
     site_title = 'Smart QC'
     site_footer = 'yuefan 2017'
-    menu_style = 'default'  # 'accordion'
+    menu_style = 'accordion'  # 'accordion'
 
 
 xadmin.sites.site.register(views.CommAdminView, GlobalSetting)

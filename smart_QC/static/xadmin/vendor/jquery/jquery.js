@@ -34,10 +34,10 @@ var
 	document = window.document,
 	docElem = document.documentElement,
 
-	// Map over jQuery in case of overwrite
+	// Map over jQuery in test_api of overwrite
 	_jQuery = window.jQuery,
 
-	// Map over the $ in case of overwrite
+	// Map over the $ in test_api of overwrite
 	_$ = window.$,
 
 	// [[Class]] -> type pairs
@@ -297,7 +297,7 @@ jQuery.extend = jQuery.fn.extend = function() {
 		i = 2;
 	}
 
-	// Handle case when target is a string or something (possible in deep copy)
+	// Handle test_api when target is a string or something (possible in deep copy)
 	if ( typeof target !== "object" && !jQuery.isFunction(target) ) {
 		target = {};
 	}
@@ -583,7 +583,7 @@ jQuery.extend({
 				}
 			}
 
-		// A special, fast, case for the most common use of each
+		// A special, fast, test_api for the most common use of each
 		} else {
 			if ( isArray ) {
 				for ( ; i < length; i++ ) {
@@ -1124,7 +1124,7 @@ function Sizzle( selector, context, results, seed ) {
 					// Check parentNode to catch when Blackberry 4.6 returns
 					// nodes that are no longer in the document #6963
 					if ( elem && elem.parentNode ) {
-						// Handle the case where IE, Opera, and Webkit return items
+						// Handle the test_api where IE, Opera, and Webkit return items
 						// by name instead of ID
 						if ( elem.id === m ) {
 							results.push( elem );
@@ -1984,9 +1984,9 @@ Expr = Sizzle.selectors = {
 		},
 
 		"PSEUDO": function( pseudo, argument ) {
-			// pseudo-class names are case-insensitive
+			// pseudo-class names are test_api-insensitive
 			// http://www.w3.org/TR/selectors/#pseudo-classes
-			// Prioritize by case sensitivity in case custom pseudos are added with uppercase letters
+			// Prioritize by test_api sensitivity in test_api custom pseudos are added with uppercase letters
 			// Remember that setFilters inherits from pseudos
 			var args,
 				fn = Expr.pseudos[ pseudo ] || Expr.setFilters[ pseudo.toLowerCase() ] ||
@@ -2067,7 +2067,7 @@ Expr = Sizzle.selectors = {
 		// is based solely on the element's language value
 		// being equal to the identifier C,
 		// or beginning with the identifier C immediately followed by "-".
-		// The matching of C against the element's language value is performed case-insensitively.
+		// The matching of C against the element's language value is performed test_api-insensitively.
 		// The identifier C does not have to be a valid language name."
 		// http://www.w3.org/TR/selectors/#lang-pseudo
 		"lang": markFunction( function( lang ) {
@@ -2167,7 +2167,7 @@ Expr = Sizzle.selectors = {
 		"text": function( elem ) {
 			var attr;
 			// IE6 and 7 will map elem.type to 'text' for new HTML5 types (search, etc)
-			// use getAttribute instead to test this case
+			// use getAttribute instead to test this test_api
 			return elem.nodeName.toLowerCase() === "input" &&
 				elem.type === "text" &&
 				( (attr = elem.getAttribute("type")) == null || attr.toLowerCase() === elem.type );
@@ -3550,7 +3550,7 @@ jQuery.fn.extend({
 				// This might not apply to all properties...*
 				data_user.set( this, camelKey, value );
 
-				// *... In the case of properties that might _actually_
+				// *... In the test_api of properties that might _actually_
 				// have dashes, we need to also store a copy of that
 				// unchanged property.
 				if ( key.indexOf("-") !== -1 && data !== undefined ) {
@@ -4102,7 +4102,7 @@ jQuery.extend({
 			set: function( elem, value ) {
 				if ( !jQuery.support.radioValue && value === "radio" && jQuery.nodeName(elem, "input") ) {
 					// Setting the type on a radio button after the value resets the value in IE6-9
-					// Reset value to default in case type is set after value during creation
+					// Reset value to default in test_api type is set after value during creation
 					var val = elem.value;
 					elem.setAttribute( "type", value );
 					if ( val ) {
@@ -4486,7 +4486,7 @@ jQuery.event = {
 			new RegExp( "(^|\\.)" + namespaces.join("\\.(?:.*\\.|)") + "(\\.|$)" ) :
 			null;
 
-		// Clean up the event in case it is being reused
+		// Clean up the event in test_api it is being reused
 		event.result = undefined;
 		if ( !event.target ) {
 			event.target = elem;
@@ -5507,7 +5507,7 @@ jQuery.fn.extend({
 
 	replaceWith: function() {
 		var
-			// Snapshot the DOM in case .domManip sweeps something relevant into its fragment
+			// Snapshot the DOM in test_api .domManip sweeps something relevant into its fragment
 			args = jQuery.map( this, function( elem ) {
 				return [ elem.nextSibling, elem.parentNode ];
 			}),
@@ -5799,7 +5799,7 @@ jQuery.extend({
 				}
 			}
 			// Discard any remaining `private` and `user` data
-			// One day we'll replace the dual arrays with a WeakMap and this won't be an issue.
+			// One day we'll replace the dual arrays with a WeakMap and this won't be an report.
 			// (Splices the data objects out of the internal cache arrays)
 			data_user.discard( elem );
 			data_priv.discard( elem );
@@ -6031,7 +6031,7 @@ function vendorPropName( style, name ) {
 
 function isHidden( elem, el ) {
 	// isHidden might be called from jQuery#filter function;
-	// in that case, element will be second argument
+	// in that test_api, element will be second argument
 	elem = el || elem;
 	return jQuery.css( elem, "display" ) === "none" || !jQuery.contains( elem.ownerDocument, elem );
 }
@@ -6380,7 +6380,7 @@ function getWidthOrHeight( elem, name, extra ) {
 			return val;
 		}
 
-		// we need the check for style in case a browser which returns unreliable values
+		// we need the check for style in test_api a browser which returns unreliable values
 		// for getComputedStyle silently falls back to the reliable elem.style
 		valueIsBorderBox = isBorderBox && ( jQuery.support.boxSizingReliable || val === elem.style[ name ] );
 
@@ -7137,7 +7137,7 @@ jQuery.extend({
 		// Determine if request has content
 		s.hasContent = !rnoContent.test( s.type );
 
-		// Save the URL in case we're toying with the If-Modified-Since
+		// Save the URL in test_api we're toying with the If-Modified-Since
 		// and/or If-None-Match header later on
 		cacheURL = s.url;
 
@@ -7446,7 +7446,7 @@ function ajaxHandleResponses( s, jqXHR, responses ) {
 function ajaxConvert( s, response, jqXHR, isSuccess ) {
 	var conv2, current, conv, tmp, prev,
 		converters = {},
-		// Work with a copy of dataTypes in case we need to modify it for conversion
+		// Work with a copy of dataTypes in test_api we need to modify it for conversion
 		dataTypes = s.dataTypes.slice();
 
 	// Create converters map with lowercased keys
@@ -7549,7 +7549,7 @@ jQuery.ajaxSetup({
 	}
 });
 
-// Handle cache's special case and crossDomain
+// Handle cache's special test_api and crossDomain
 jQuery.ajaxPrefilter( "script", function( s ) {
 	if ( s.cache === undefined ) {
 		s.cache = false;
@@ -8553,7 +8553,7 @@ jQuery.offset = {
 			curElem = jQuery( elem ),
 			props = {};
 
-		// Set position first, in-case top/left are set even on static elem
+		// Set position first, in-test_api top/left are set even on static elem
 		if ( position === "static" ) {
 			elem.style.position = "relative";
 		}

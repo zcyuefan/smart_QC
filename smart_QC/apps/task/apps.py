@@ -4,4 +4,4 @@ from django.apps import AppConfig
 
 
 class CiConfig(AppConfig):
-    name = 'smart_QC.apps.ci'
+    name = 'smart_QC.apps.task'
