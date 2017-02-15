@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'xadmin',
     'crispy_forms',
     'reversion',
-    'smart_QC.apps.website'
+    'smart_QC.apps.website',
+    'smart_QC.apps.test_api',
 ]
 
 MIDDLEWARE_CLASSES = [

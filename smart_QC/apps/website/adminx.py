@@ -88,7 +88,7 @@ class HostAdmin(object):
     open_web.is_column = True
 
     list_display = ('name', 'idc', 'guarantee_date', 'service_type',
-                    'status', 'open_web', 'description')
+                    'status', 'open_web', 'description', )
     list_display_links = ('name',)
 
     raw_id_fields = ('idc',)
@@ -154,7 +154,7 @@ class HostAdmin(object):
 
 
 class HostGroupAdmin(object):
-    list_display = ('name', 'description')
+    list_display = ('name', 'description', 'hosts')
     list_display_links = ('name',)
 
     search_fields = ['name']
@@ -163,9 +163,11 @@ class HostGroupAdmin(object):
 
 class MaintainLogAdmin(object):
     list_display = (
-        'host', 'maintain_type', 'hard_type', 'time', 'operator', 'note')
+        'host', 'maintain_type', 'hard_type', 'time', 'operator', 'note', 'cpu')
     list_display_links = ('host',)
 
+    def cpu(self, obj):
+        return obj.host.cpu
     list_filter = ['host', 'maintain_type', 'hard_type', 'time', 'operator']
     search_fields = ['note']
 
