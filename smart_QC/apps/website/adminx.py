@@ -8,6 +8,7 @@ from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Col, AppendedText
 from xadmin.plugins.inline import Inline
 from xadmin.plugins.batch import BatchChangeAction
 
+
 #  菜单还需要设置
 # rtm（需求跟踪）：版本管理，原始需求，需求分解，测试要点，代码地图
 # task任务管理：

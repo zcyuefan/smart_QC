@@ -29,49 +29,64 @@ class TimeStampedWithStatusModel(models.Model):
 class RequestModel(models.Model):
     method = models.CharField(max_length=10, choices=REQUEST_METHODS)
     url = models.URLField()
-    protocol = models.CharField(max_length=10)
-    host = models.CharField(max_length=30)
-    path = models.FilePathField(max_length=30)
-    params = models.TextField()  # params,headers,data are all saved with dict
-    request_headers = models.TextField()
-    data = models.TextField()
+    protocol = models.CharField(default='https', max_length=10)
+    host = models.ForeignKey('TestHost', to_field='name')
+    path = models.CharField(max_length=30)
+    params = models.TextField(blank=True)  # params,headers,data are all saved with dict
+    request_headers = models.TextField(blank=True)
+    data = models.TextField(blank=True)
 
     class Meta:
         abstract = True
 
 
 class ResponseModel(models.Model):
-    status_code = models.PositiveIntegerField()
-    response_headers = models.TextField()
+    status_code = models.PositiveIntegerField(blank=True)
+    response_headers = models.TextField(blank=True)
     response_content = models.TextField(blank=True)
 
     class Meta:
         abstract = True
 
 
-class RecordModule(TimeStampedWithStatusModel):
-    name = models.CharField(max_length=20, primary_key=True, unique=True)
-    hosts = models.CharField(max_length=255)
-    default_host = models.CharField(max_length=30)
-    remark = models.CharField(max_length=255)
+class TestHost(TimeStampedWithStatusModel):
+    """
+    api host
+    """
+    name = models.CharField(max_length=40, unique=True)
+    module = models.CharField(max_length=20)
+    remark = models.TextField(max_length=255, blank=True)
 
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name = 'RecordModule'
+        verbose_name = 'Test Host'
         verbose_name_plural = verbose_name
 
 
-class Tag(TimeStampedWithStatusModel):
-    name = models.CharField(max_length=20, primary_key=True, unique=True)
-    remark = models.CharField(max_length=255)
+class TestEnvironment(TimeStampedWithStatusModel):
+    name = models.CharField(max_length=40, unique=True)
+    hosts = models.ManyToManyField(TestHost)
+    remark = models.TextField(max_length=255, blank=True)
 
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name = 'Tag'
+        verbose_name = 'Test Environment'
+        verbose_name_plural = verbose_name
+
+
+class CaseTag(TimeStampedWithStatusModel):
+    name = models.CharField(max_length=20, unique=True)
+    remark = models.TextField(max_length=255, blank=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Case Tag'
         verbose_name_plural = verbose_name
 
 
@@ -79,9 +94,6 @@ class OriginalAPI(TimeStampedWithStatusModel, RequestModel, ResponseModel):
     """
     原始接口数据模型（fiddler采集后导入的数据）
     """
-    #
-    record_module = models.ForeignKey(RecordModule)
-    tag = models.ManyToManyField(Tag)
     # request
     # response
     is_handled = models.BooleanField(default=False)  # false表示未进行模板化处理
@@ -101,12 +113,10 @@ class APITemplate(TimeStampedWithStatusModel, RequestModel, ResponseModel):
     #
     name = models.CharField(max_length=40, unique=True)
     original_api = models.ForeignKey(OriginalAPI)
-    record_module = models.ForeignKey(RecordModule)
-    tags = models.CharField(max_length=60)
     # request
     # response
-    param_keys = models.CharField(max_length=255)
-    data_keys = models.CharField(max_length=255)
+    param_keys = models.CharField(max_length=255, blank=True)
+    data_keys = models.CharField(max_length=255, blank=True)
     api_md5 = models.CharField(max_length=30)  # calculated by method, path, param keys, data keys
 
     def __str__(self):
@@ -136,12 +146,11 @@ class ReplayLog(TimeStampedWithStatusModel):
     用例执行结果历史，用于后续报告和统计分析。加入其他测试功能后可将此模块移至公共模块
     """
     # task = models.ForeignKey(Task)
-    name = models.CharField(max_length=40, primary_key=True, unique=True)
+    name = models.CharField(max_length=40, unique=True)
     version = models.CharField(max_length=30, blank=True)
-    record_module = models.ForeignKey(RecordModule)
     run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
-    fail_reason = models.CommaSeparatedIntegerField(max_length=30)
-    detail = models.TextField()  # 用例运行详情，如果是单一接口测试，以json格式记录请求和返回，如果是接口组，则分别记录
+    fail_reason = models.TextField(max_length=30, blank=True)
+    detail = models.TextField(blank=True)  # 用例运行详情，如果是单一接口测试，以json格式记录请求和返回，如果是接口组，则分别记录
     replay_time = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -161,11 +170,11 @@ class Variable(TimeStampedWithStatusModel):
         (1, 'Static'),
         (2, 'Evaluate'),
     )
-    name = models.CharField(max_length=40, primary_key=True, unique=True)
+    name = models.CharField(max_length=40, unique=True)
     var_type = models.SmallIntegerField(default=1, choices=VAR_TYPE)  # var_type=1,表示直接取静态值
     expression = models.TextField()  # var_type=1时存入静态值，2时存入表达式
-    modules = models.CharField(max_length=100)
-    namespace = models.CharField(max_length=20)
+    modules = models.CharField(max_length=100, blank=True)
+    namespace = models.CharField(max_length=20, blank=True)
 
     def __str__(self):
         return self.name
@@ -179,8 +188,8 @@ class Assertion(TimeStampedWithStatusModel):
     """
     断言数据模型
     """
-    name = models.CharField(max_length=40, primary_key=True, unique=True)
-    is_default = models.BooleanField(default=True)  # True表示在用例没有关联断言时，运行默认断言
+    name = models.CharField(max_length=40, unique=True)
+    is_default = models.BooleanField(default=False)  # True表示在用例没有关联断言时，运行默认断言
 
     def __str__(self):
         return self.name
@@ -196,18 +205,17 @@ class Case(TimeStampedWithStatusModel, RequestModel):
     """
     name = models.CharField(max_length=40)
     case_type = models.SmallIntegerField(default=0, choices=CASE_TYPE)
-    invoke_cases = models.ManyToManyField('self', symmetrical=False)
+    invoke_cases = models.ManyToManyField('self', symmetrical=False, blank=True)
     template = models.ForeignKey(APITemplate)
-    record_module = models.ForeignKey(RecordModule)
-    tags = models.CharField(max_length=60)
+    tag = models.ManyToManyField(CaseTag)
     # params,request_headers,data,setup,teardown支持参数化
-    setup = models.TextField()
-    teardown = models.TextField()
+    setup = models.TextField(blank=True)
+    teardown = models.TextField(blank=True)
     #
-    assertions = models.ManyToManyField(Assertion)  # 逗号分隔的断言id
-    generated_vars = models.ManyToManyField(Variable)  # 关联生成的variable数据，执行后更新variable
+    assertions = models.ManyToManyField(Assertion, blank=True)  # 逗号分隔的断言id
+    generated_vars = models.ManyToManyField(Variable, blank=True)  # 关联生成的variable数据，执行后更新variable
     last_run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
-    replay_logs = models.ManyToManyField(ReplayLog)
+    replay_logs = models.ManyToManyField(ReplayLog, blank=True)
 
     def __str__(self):
         return self.name
