@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from smart_QC.libs.json_field import JSONField, JSONOrTextField
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -20,7 +21,6 @@ REQUEST_METHODS = (
 class TimeStampedWithStatusModel(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
     modify_time = models.DateTimeField(auto_now=True)
-    is_active = models.BooleanField(default=True)
 
     class Meta:
         abstract = True
@@ -28,13 +28,13 @@ class TimeStampedWithStatusModel(models.Model):
 
 class RequestModel(models.Model):
     method = models.CharField(max_length=10, choices=REQUEST_METHODS)
-    url = models.URLField()
     protocol = models.CharField(default='https', max_length=10)
     host = models.ForeignKey('TestHost', to_field='name')
     path = models.CharField(max_length=30)
     params = models.TextField(blank=True)  # params,headers,data are all saved with dict
     request_headers = models.TextField(blank=True)
-    data = models.TextField(blank=True)
+    data = JSONField(blank=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False, 'sort_keys': False})
+    # data = JSONField(blank=True, encoder_kwargs={'indent': 4})
 
     class Meta:
         abstract = True
@@ -43,7 +43,7 @@ class RequestModel(models.Model):
 class ResponseModel(models.Model):
     status_code = models.PositiveIntegerField(blank=True)
     response_headers = models.TextField(blank=True)
-    response_content = models.TextField(blank=True)
+    response_content = JSONOrTextField(blank=True)
 
     class Meta:
         abstract = True
@@ -96,10 +96,10 @@ class OriginalAPI(TimeStampedWithStatusModel, RequestModel, ResponseModel):
     """
     # request
     # response
-    is_handled = models.BooleanField(default=False)  # false表示未进行模板化处理
+    templated = models.BooleanField(default=False)  # false表示未进行模板化处理
 
     def __str__(self):
-        return self.url
+        return self.method + ' ' + self.protocol + '://' + self.host.name + '/' + self.path
 
     class Meta:
         verbose_name = 'Original API'
@@ -213,7 +213,7 @@ class Case(TimeStampedWithStatusModel, RequestModel):
     teardown = models.TextField(blank=True)
     #
     assertions = models.ManyToManyField(Assertion, blank=True)  # 逗号分隔的断言id
-    generated_vars = models.ManyToManyField(Variable, blank=True)  # 关联生成的variable数据，执行后更新variable
+    generated_vars = models.ManyToManyField(Variable,blank=True)  # 关联生成的variable数据，执行后更新variable
     last_run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
     replay_logs = models.ManyToManyField(ReplayLog, blank=True)
 
