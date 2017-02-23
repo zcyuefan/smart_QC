@@ -6,7 +6,7 @@ from xadmin import views
 from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Variable, Assertion
 from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Col, AppendedText, Side
 from xadmin.plugins.inline import Inline
-from xadmin.plugins.batch import BatchChangeAction
+# from xadmin.plugins.batch import BatchChangeAction
 
 
 class TestHostAdmin(object):
