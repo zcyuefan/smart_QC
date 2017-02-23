@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models
-from smart_QC.libs.json_field import JSONField, JSONOrTextField
+from smart_QC.libs.json_field import JSONField
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -31,10 +31,10 @@ class RequestModel(models.Model):
     protocol = models.CharField(default='https', max_length=10)
     host = models.ForeignKey('TestHost', to_field='name')
     path = models.CharField(max_length=30)
-    params = models.TextField(blank=True)  # params,headers,data are all saved with dict
-    request_headers = models.TextField(blank=True)
-    data = JSONField(blank=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False, 'sort_keys': False})
-    # data = JSONField(blank=True, encoder_kwargs={'indent': 4})
+    # params,headers,data are all saved with dict
+    params = JSONField(blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
+    request_headers = JSONField(blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
+    data = JSONField(blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
 
     class Meta:
         abstract = True
@@ -42,8 +42,8 @@ class RequestModel(models.Model):
 
 class ResponseModel(models.Model):
     status_code = models.PositiveIntegerField(blank=True)
-    response_headers = models.TextField(blank=True)
-    response_content = JSONOrTextField(blank=True)
+    response_headers = JSONField(blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
+    response_content = JSONField(blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
 
     class Meta:
         abstract = True
