@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from django.db import models
 from smart_QC.libs.json_field import JSONField
+from smart_QC.libs.model_tools import BaseModel, AbstractClassWithoutFieldsNamed as without
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -17,13 +18,63 @@ REQUEST_METHODS = (
     ('TRACE', 'TRACE'),
 )
 
-
-class TimeStampedWithStatusModel(models.Model):
-    create_time = models.DateTimeField(auto_now_add=True)
-    modify_time = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        abstract = True
+STATUS_CODES = (
+    ('100', '100 Continue'),
+    ('101', '101 Switching Protocols'),
+    ('102', '102 Processing'),
+    ('200', '200 OK'),
+    ('201', '201 Created'),
+    ('202', '202 Accepted'),
+    ('203', '203 Non-Authoritative Information'),
+    ('204', '204 No Content'),
+    ('205', '205 Reset Content'),
+    ('206', '206 Partial Content'),
+    ('207', '207 Multi-Status'),
+    ('300', '300 Multiple Choices'),
+    ('301', '301 Moved Permanently'),
+    ('302', '302 Move temporarily'),
+    ('303', '303 See Other'),
+    ('304', '304 Not Modified'),
+    ('305', '305 Use Proxy'),
+    ('306', '306 Switch Proxy'),
+    ('307', '307 Temporary Redirect'),
+    ('400', '400 Bad Request'),
+    ('401', '401 Unauthorized'),
+    ('402', '402 Payment Required'),
+    ('403', '403 Forbidden'),
+    ('404', '404 Not Found'),
+    ('405', '405 Method Not Allowed'),
+    ('406', '406 Not Acceptable'),
+    ('407', '407 Proxy Authentication Required'),
+    ('408', '408 Request Timeout'),
+    ('409', '409 Conflict'),
+    ('410', '410 Gone'),
+    ('411', '411 Length Required'),
+    ('412', '412 Precondition Failed'),
+    ('413', '413 Request Entity Too Large'),
+    ('414', '414 Request-URI Too Long'),
+    ('415', '415 Unsupported Media Type'),
+    ('416', '416 Requested Range Not Satisfiable'),
+    ('417', '417 Expectation Failed'),
+    ('421', '421 There are too many connections from your internet address'),
+    ('422', '422 Unprocessable Entity'),
+    ('423', '423 Locked'),
+    ('424', '424 Failed Dependency'),
+    ('425', '425 Unordered Collection'),
+    ('426', '426 Upgrade Required'),
+    ('449', '449 Retry With'),
+    ('500', '500 Internal Server Error'),
+    ('501', '501 Not Implemented'),
+    ('502', '502 Bad Gateway'),
+    ('503', '503 Service Unavailable'),
+    ('504', '504 Gateway Timeout'),
+    ('505', '505 HTTP Version Not Supported'),
+    ('506', '506 Variant Also Negotiates'),
+    ('507', '507 Insufficient Storage'),
+    ('509', '509 Bandwidth Limit Exceeded'),
+    ('510', '510 Not Extended'),
+    ('600', '600 Unparseable Response Headers'),
+)
 
 
 class RequestModel(models.Model):
@@ -41,7 +92,7 @@ class RequestModel(models.Model):
 
 
 class ResponseModel(models.Model):
-    status_code = models.PositiveIntegerField(blank=True)
+    status_code = models.CharField(max_length=10, choices=STATUS_CODES)
     response_headers = JSONField(blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
     response_content = JSONField(blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
 
@@ -49,13 +100,11 @@ class ResponseModel(models.Model):
         abstract = True
 
 
-class TestHost(TimeStampedWithStatusModel):
+class TestHost(BaseModel):
     """
     api host
     """
-    name = models.CharField(max_length=40, unique=True)
     module = models.CharField(max_length=20)
-    remark = models.TextField(max_length=255, blank=True)
 
     def __str__(self):
         return self.name
@@ -65,10 +114,8 @@ class TestHost(TimeStampedWithStatusModel):
         verbose_name_plural = verbose_name
 
 
-class TestEnvironment(TimeStampedWithStatusModel):
-    name = models.CharField(max_length=40, unique=True)
+class TestEnvironment(BaseModel):
     hosts = models.ManyToManyField(TestHost)
-    remark = models.TextField(max_length=255, blank=True)
 
     def __str__(self):
         return self.name
@@ -78,10 +125,7 @@ class TestEnvironment(TimeStampedWithStatusModel):
         verbose_name_plural = verbose_name
 
 
-class CaseTag(TimeStampedWithStatusModel):
-    name = models.CharField(max_length=20, unique=True)
-    remark = models.TextField(max_length=255, blank=True)
-
+class CaseTag(BaseModel):
     def __str__(self):
         return self.name
 
@@ -90,10 +134,11 @@ class CaseTag(TimeStampedWithStatusModel):
         verbose_name_plural = verbose_name
 
 
-class OriginalAPI(TimeStampedWithStatusModel, RequestModel, ResponseModel):
+class OriginalAPI(BaseModel, RequestModel, ResponseModel):
     """
     原始接口数据模型（fiddler采集后导入的数据）
     """
+    # name = models.CharField(max_length=40, blank=True)
     # request
     # response
     templated = models.BooleanField(default=False)  # false表示未进行模板化处理
@@ -104,15 +149,15 @@ class OriginalAPI(TimeStampedWithStatusModel, RequestModel, ResponseModel):
     class Meta:
         verbose_name = 'Original API'
         verbose_name_plural = verbose_name
+OriginalAPI._meta.get_field('name').blank = True
 
 
-class APITemplate(TimeStampedWithStatusModel, RequestModel, ResponseModel):
+class APITemplate(BaseModel, RequestModel, ResponseModel):
     """
     接口模板数据模型（使用api_md5字段区分唯一接口）
     """
     #
-    name = models.CharField(max_length=40, unique=True)
-    original_api = models.ForeignKey(OriginalAPI)
+    original_api = models.ForeignKey(OriginalAPI, blank=True)
     # request
     # response
     param_keys = models.CharField(max_length=255, blank=True)
@@ -141,12 +186,11 @@ RUN_STATUS = (
 )
 
 
-class ReplayLog(TimeStampedWithStatusModel):
+class ReplayLog(BaseModel):
     """
     用例执行结果历史，用于后续报告和统计分析。加入其他测试功能后可将此模块移至公共模块
     """
     # task = models.ForeignKey(Task)
-    name = models.CharField(max_length=40, unique=True)
     version = models.CharField(max_length=30, blank=True)
     run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
     fail_reason = models.TextField(max_length=30, blank=True)
@@ -161,7 +205,7 @@ class ReplayLog(TimeStampedWithStatusModel):
         verbose_name_plural = verbose_name
 
 
-class Variable(TimeStampedWithStatusModel):
+class Variable(BaseModel):
     """
     参数化数据模型，借鉴RobotFramework参数化的方法，定义${},@{},&{}三种值类型的参数，借鉴evaluate关键字（eval方法）运行生成
     动态参数值，借鉴rf的find_var方法找到参数，并写一个装饰器处理用例运行过程中所有环节的参数化
@@ -170,7 +214,6 @@ class Variable(TimeStampedWithStatusModel):
         (1, 'Static'),
         (2, 'Evaluate'),
     )
-    name = models.CharField(max_length=40, unique=True)
     var_type = models.SmallIntegerField(default=1, choices=VAR_TYPE)  # var_type=1,表示直接取静态值
     expression = models.TextField()  # var_type=1时存入静态值，2时存入表达式
     modules = models.CharField(max_length=100, blank=True)
@@ -184,11 +227,10 @@ class Variable(TimeStampedWithStatusModel):
         verbose_name_plural = verbose_name
 
 
-class Assertion(TimeStampedWithStatusModel):
+class Assertion(BaseModel):
     """
     断言数据模型
     """
-    name = models.CharField(max_length=40, unique=True)
     is_default = models.BooleanField(default=False)  # True表示在用例没有关联断言时，运行默认断言
 
     def __str__(self):
@@ -199,11 +241,10 @@ class Assertion(TimeStampedWithStatusModel):
         verbose_name_plural = verbose_name
 
 
-class Case(TimeStampedWithStatusModel, RequestModel):
+class Case(BaseModel, RequestModel):
     """
     接口用例数据模型
     """
-    name = models.CharField(max_length=40)
     case_type = models.SmallIntegerField(default=0, choices=CASE_TYPE)
     invoke_cases = models.ManyToManyField('self', symmetrical=False, blank=True)
     template = models.ForeignKey(APITemplate)

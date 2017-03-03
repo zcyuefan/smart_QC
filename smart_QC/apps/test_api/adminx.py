@@ -10,33 +10,33 @@ from xadmin.plugins.inline import Inline
 
 
 class TestHostAdmin(object):
-    list_display = ('name', 'module', 'remark')
+    list_display = ('name', 'module', 'description')
     list_display_links = ('name',)
 
-    search_fields = ['name', 'module', 'remark', 'default_host', ]
+    search_fields = ['name', 'module', 'description', 'default_host', ]
     model_icon = 'fa fa-laptop'
-    list_editable = ('name', 'module', 'remark')
+    list_editable = ('name', 'module', 'description')
     list_select_related = True
     reversion_enable = True
 
 
 class TestEnvironmentAdmin(object):
-    list_display = ('name', 'hosts', 'remark', )
+    list_display = ('name', 'hosts', 'description', )
     list_display_links = ('name',)
-    search_fields = ['name', 'hosts', 'remark', 'default_host', ]
+    search_fields = ['name', 'hosts', 'description', 'default_host', ]
     # style_fields = {'hosts': 'checkbox-inline'}
     style_fields = {'hosts': 'm2m_transfer'}
     model_icon = 'fa fa-cloud'
-    list_editable = ('name', 'hosts', 'remark', )
+    list_editable = ('name', 'hosts', 'description', )
     list_select_related = True
     reversion_enable = True
 
 
 class CaseTagAdmin(object):
-    list_display = ('name', 'remark', )
+    list_display = ('name', 'description', )
     list_display_links = ('name',)
-    search_fields = ['name', ]
-    list_editable = ('name', 'remark', )
+    search_fields = ['name', 'description', ]
+    list_editable = ('name', 'description', )
     raw_id_fields = ('Case',)
     list_select_related = True
     model_icon = 'fa fa-tags'
@@ -70,20 +70,16 @@ class OriginalAPIAdmin(object):
                  'templated',
                  # horizontal=True,
                  ),
-        TabHolder(
-            Tab('tab1',
-                Fieldset('Request',
+        Fieldset('Extend Fields',
+                 TabHolder(
+                     Tab('Request',
                          'request_headers', 'params', 'data',
                          ),
-                span=9, horizontal=True
-                ),
-            Tab('tab2',
-                Fieldset('Response',
+                     Tab('Response',
                          'response_headers', 'status_code', 'response_content',
                          ),
-                span=3
-                ),
-        ),
+                    ),
+                 ),
     )
 
     reversion_enable = True
@@ -92,10 +88,44 @@ class OriginalAPIAdmin(object):
 
 
 class APITemplateAdmin(object):
-    # list_display = ('record_module', )
+    def list_display_options(self, instance):
+        return "<a href='http://%s' target='_blank'>Open</a>" % instance.url
+    list_display_options.short_description = "options"
+    list_display_options.allow_tags = True
+    list_display_options.is_column = True
     list_select_related = True
     model_icon = 'fa fa-leaf'
     reversion_enable = True
+
+    refresh_times = (3, 5)
+    list_display = ('id', 'name', 'status_code', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',
+                    'data', 'create_time', 'modify_time', 'list_display_options', )
+    list_display_links = ('name',)
+    readonly_fields = ('api_md5',)
+    search_fields = ('id', 'name', 'status_code', 'method', 'protocol', 'host', 'path',
+                     'create_time', 'modify_time', )
+    list_filter = ['id', 'name', 'status_code', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',
+                   'data', 'api_md5', 'create_time', 'modify_time', ]
+                   # ('service_type', xadmin.filters.MultiSelectFieldListFilter)]
+
+    list_bookmarks = []
+    form_layout = (
+        Fieldset("Common Fields",
+                 'name', 'original_api', 'method',
+                 Row('protocol', 'host', 'path',),
+                 # horizontal=True,
+                 ),
+        Fieldset('Extend Fields',
+                 TabHolder(
+                     Tab('Request',
+                         'request_headers', 'params', 'data',
+                         ),
+                     Tab('Response',
+                         'response_headers', 'status_code', 'response_content',
+                         ),
+                        ),
+                 ),
+    )
 
 
 class CaseAdmin(object):

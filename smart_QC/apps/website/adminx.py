@@ -89,7 +89,7 @@ class HostAdmin(object):
     open_web.is_column = True
 
     list_display = ('name', 'idc', 'guarantee_date', 'service_type',
-                    'status', 'open_web', 'description', )
+                    'status', 'open_web', 'description')
     list_display_links = ('name',)
 
     raw_id_fields = ('idc',)
