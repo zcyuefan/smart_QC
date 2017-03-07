@@ -237,7 +237,6 @@ class Case(BaseModel, RequestModel):
     assertions = models.ManyToManyField(Assertion, blank=True)  # 逗号分隔的断言id
     generated_vars = models.ManyToManyField(Variable, blank=True)  # 关联生成的variable数据，执行后更新variable
     last_run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
-    # replay_logs = models.ManyToManyField(ReplayLog, blank=True)
 
     def __str__(self):
         return self.name
