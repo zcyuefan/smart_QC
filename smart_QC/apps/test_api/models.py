@@ -83,9 +83,9 @@ class RequestModel(models.Model):
     host = models.ForeignKey('TestHost', to_field='name')
     path = models.CharField(max_length=30)
     # params,headers,data are all saved with dict
-    params = JSONField(blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
-    request_headers = JSONField(blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
-    data = JSONField(blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
+    params = JSONField(default='', blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
+    request_headers = JSONField(default='', blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
+    data = JSONField(default='', blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
 
     class Meta:
         abstract = True
@@ -93,8 +93,8 @@ class RequestModel(models.Model):
 
 class ResponseModel(models.Model):
     status_code = models.CharField(max_length=10, choices=STATUS_CODES)
-    response_headers = JSONField(blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
-    response_content = JSONField(blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
+    response_headers = JSONField(default='', blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
+    response_content = JSONField(default='', blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
 
     class Meta:
         abstract = True
@@ -186,25 +186,6 @@ RUN_STATUS = (
 )
 
 
-class ReplayLog(BaseModel):
-    """
-    用例执行结果历史，用于后续报告和统计分析。加入其他测试功能后可将此模块移至公共模块
-    """
-    # task = models.ForeignKey(Task)
-    version = models.CharField(max_length=30, blank=True)
-    run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
-    fail_reason = models.TextField(max_length=30, blank=True)
-    detail = models.TextField(blank=True)  # 用例运行详情，如果是单一接口测试，以json格式记录请求和返回，如果是接口组，则分别记录
-    replay_time = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = 'Replay Log'
-        verbose_name_plural = verbose_name
-
-
 class Variable(BaseModel):
     """
     参数化数据模型，借鉴RobotFramework参数化的方法，定义${},@{},&{}三种值类型的参数，借鉴evaluate关键字（eval方法）运行生成
@@ -247,16 +228,16 @@ class Case(BaseModel, RequestModel):
     """
     case_type = models.SmallIntegerField(default=0, choices=CASE_TYPE)
     invoke_cases = models.ManyToManyField('self', symmetrical=False, blank=True)
-    template = models.ForeignKey(APITemplate)
-    tag = models.ManyToManyField(CaseTag)
+    template = models.ForeignKey(APITemplate, blank=True)
+    tag = models.ManyToManyField(CaseTag, blank=True)
     # params,request_headers,data,setup,teardown支持参数化
-    setup = models.TextField(blank=True)
-    teardown = models.TextField(blank=True)
+    setup = models.TextField(blank=True, help_text='Python code to run before sending the request.')
+    teardown = models.TextField(blank=True, help_text='Python code to run after request sent.')
     #
     assertions = models.ManyToManyField(Assertion, blank=True)  # 逗号分隔的断言id
-    generated_vars = models.ManyToManyField(Variable,blank=True)  # 关联生成的variable数据，执行后更新variable
+    generated_vars = models.ManyToManyField(Variable, blank=True)  # 关联生成的variable数据，执行后更新variable
     last_run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
-    replay_logs = models.ManyToManyField(ReplayLog, blank=True)
+    # replay_logs = models.ManyToManyField(ReplayLog, blank=True)
 
     def __str__(self):
         return self.name
@@ -265,7 +246,31 @@ class Case(BaseModel, RequestModel):
         verbose_name = 'Case'
         verbose_name_plural = verbose_name
 
+Case._meta.get_field('method').blank = True
+Case._meta.get_field('protocol').blank = True
+Case._meta.get_field('host').blank = True
+Case._meta.get_field('path').blank = True
 
+
+class ReplayLog(models.Model):
+    """
+    用例执行结果历史，用于后续报告和统计分析。加入其他测试功能后可将此模块移至公共模块
+    """
+    # task = models.ForeignKey(Task)
+    case = models.ForeignKey(Case)
+    version = models.CharField(max_length=30, blank=True)
+    run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
+    fail_reason = models.TextField(max_length=30, blank=True)
+    detail = models.TextField(blank=True)  # 用例运行详情，如果是单一接口测试，以json格式记录请求和返回，如果是接口组，则分别记录
+    replay_time = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return '[%s] [%s] [%s] [%s]' % (self.version, self.case.name,
+                                      self.replay_time.strftime('%Y-%m-%d %H:%M:%S'), RUN_STATUS[self.run_status][1],)
+
+    class Meta:
+        verbose_name = 'Replay Log'
+        verbose_name_plural = verbose_name
 # class PICTScript(models.Model):
 #     """
 #     在线生成或者上传pict(Pairwise Independent Combinatorial Testing tool)脚本，输出分析结果，用于自动生成测试用例

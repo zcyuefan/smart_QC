@@ -128,11 +128,102 @@ class APITemplateAdmin(object):
     )
 
 
+class ReplayInline(object):
+    model = ReplayLog
+    extra = 1
+    style = 'accordion'
+
+
 class CaseAdmin(object):
-    # list_display = ('record_module', )
+    def list_display_options(self, instance):
+        return "<a href='http://%s' target='_blank'>Open</a>" % instance.url
+
+    style_fields = {'invoke_cases': 'm2m_transfer',
+                    'tag': 'm2m_transfer',
+                    'assertions': 'm2m_transfer',
+                    'generated_vars': 'm2m_transfer'
+                    }
+    list_display_options.short_description = "options"
+    list_display_options.allow_tags = True
+    list_display_options.is_column = True
     list_select_related = True
+    # list_display = ('record_module', )
     model_icon = 'fa fa-code'
     reversion_enable = True
+
+    refresh_times = (3, 5)
+    list_display = ('id', 'name', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',
+                    'data', 'create_time', 'modify_time', 'list_display_options',)
+    list_display_links = ('name',)
+    readonly_fields = ('last_run_status',)
+    search_fields = ('id', 'name', 'method', 'protocol', 'host', 'path',
+                     'create_time', 'modify_time',)
+    list_filter = ['id', 'name', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',
+                   'data', 'create_time', 'modify_time', ]
+    # ('service_type', xadmin.filters.MultiSelectFieldListFilter)]
+
+    list_bookmarks = []
+    inlines = [ReplayInline]
+    form_layout = (
+        Main(
+            Fieldset("Common Fields",
+                     Row('name', 'last_run_status', ),
+                     Row('case_type', 'template', ),
+                     'invoke_cases',
+                     # Row('protocol', 'host', 'path', ),
+                     # horizontal=True,
+                     ),
+            Fieldset('Extend Fields',
+                     TabHolder(
+                         Tab('About case',
+                             'description', 'tag',
+                             ),
+                         Tab('Pre Replay',
+                             'setup',
+                             ),
+                         Tab('API detail',
+                             'method',
+                             Row('protocol', 'host', ),
+                             'path', 'request_headers', 'params', 'data',
+                             ),
+                         Tab('Post Replay',
+                             'assertions', 'generated_vars', 'teardown',
+                             ),
+                     ),
+                     ),
+        ),
+        Side(
+            # Fieldset('API Replay History',
+            #          Inline(ReplayLog),
+            #          ),
+        )
+    )
+        # Fieldset("Common Fields",
+        #          Row('name', 'last_run_status',),
+        #          Row('case_type', 'template',),
+        #          'invoke_cases',
+        #          # Row('protocol', 'host', 'path', ),
+        #          # horizontal=True,
+        #          ),
+        # Fieldset('Extend Fields',
+        #          TabHolder(
+        #              Tab('About case',
+        #                  'description', 'tag',
+        #                  ),
+        #              Tab('Pre Replay',
+        #                  'setup',
+        #                  ),
+        #              Tab('API detail',
+        #                  'method',
+        #                  Row('protocol', 'host', 'path', ),
+        #                  'request_headers', 'params', 'data',
+        #                  ),
+        #              Tab('Post Replay',
+        #                  'assertions', 'generated_vars', 'teardown',
+        #                  ),
+        #          ),
+        #          ),
+    # )
 
 
 class ReplayLogAdmin(object):
