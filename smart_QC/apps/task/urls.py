@@ -18,8 +18,8 @@ from django.conf.urls import url
 import views
 
 urlpatterns = [
-    url(r'^index/$', views.index),
-    url(r'^login/$', views.login),
-    url(r'^login_ok/$', views.login_ok),
-    url(r'^logout/$', views.logout),
+    # url(r'^index/$', views.index),
+    # url(r'^login/$', views.login),
+    # url(r'^login_ok/$', views.login_ok),
+    # url(r'^logout/$', views.logout),
 ]

@@ -9,3 +9,6 @@ def index(request):
 
 def home(request):
     return render(request, 'website/home.html')
+
+from smart_QC.apps.test_api.tasks import add
+add.delay(2, 2)

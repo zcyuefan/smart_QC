@@ -22,10 +22,10 @@ import xadmin
 from xadmin.plugins import xversion
 xversion.register_models()
 
-# from django.contrib import admin
+from django.contrib import admin
 
 urlpatterns = [
-    # url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/', include(admin.site.urls)),
     url(r'^', include(xadmin.site.urls)),
     url(r'^static/(?P<path>.*)$', views.static.serve, {'document_root': settings.STATIC_ROOT}, name="static"),
     url(r'^media/(?P<path>.*)$', views.static.serve, {'document_root': settings.MEDIA_ROOT}, name="media"),

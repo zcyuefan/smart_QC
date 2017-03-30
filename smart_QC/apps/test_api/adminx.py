@@ -7,6 +7,9 @@ from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate,
 from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Col, AppendedText, Side
 from xadmin.plugins.inline import Inline
 # from xadmin.plugins.batch import BatchChangeAction
+from actions import RunCase, FailCase
+# from tasks import add
+# add.delay(2, 2)
 
 
 class TestHostAdmin(object):
@@ -18,6 +21,7 @@ class TestHostAdmin(object):
     list_editable = ('name', 'module', 'description')
     list_select_related = True
     reversion_enable = True
+    actions_on_top = False
 
 
 class TestEnvironmentAdmin(object):
@@ -50,6 +54,7 @@ class OriginalAPIAdmin(object):
     list_display_options.allow_tags = True
     list_display_options.is_column = True
     refresh_times = (3, 5)
+    list_editable = ('status_code', 'method', 'protocol', 'host', 'path', 'templated')
     list_display = ('id', 'status_code', 'method', 'protocol', 'host', 'path', 'templated',
                     'create_time', 'modify_time', 'list_display_options', )
     list_display_links = ('id',)
@@ -96,7 +101,7 @@ class APITemplateAdmin(object):
     list_select_related = True
     model_icon = 'fa fa-leaf'
     reversion_enable = True
-
+    list_editable = ('name', 'status_code', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',  'data',)
     refresh_times = (3, 5)
     list_display = ('id', 'name', 'status_code', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',
                     'data', 'create_time', 'modify_time', 'list_display_options', )
@@ -135,8 +140,24 @@ class ReplayInline(object):
 
 
 class CaseAdmin(object):
-    def list_display_options(self, instance):
-        return "<a href='http://%s' target='_blank'>Open</a>" % instance.url
+    def list_display_options(self, instance):  # display list option
+        # instance.last_run_status = '1'
+        # instance.save()
+        return "<a title = 'Run this case' onclick='alert(%s)'>" \
+               "<i class='fa fa-play-circle fa-lg'></i></a>" % instance.id
+
+    # def run_case(self, request, queryset):  # 批量运行action django admin自身的方法
+    #     queryset.update(last_run_status='1')  # 设置用例状态为执行中
+    #     # 调用异步任务，进行接口回放
+    #     # for obj in queryset:
+    #     #     print(obj.template)
+    #     #     from time import sleep
+    #     #     # sleep(5)
+
+    # run_case.short_description = "Run selected Case"
+    # run_case.icon = 'fa fa-play'
+
+    actions = [RunCase, FailCase]
 
     style_fields = {'invoke_cases': 'm2m_transfer',
                     'tag': 'm2m_transfer',
@@ -150,16 +171,16 @@ class CaseAdmin(object):
     # list_display = ('record_module', )
     model_icon = 'fa fa-code'
     reversion_enable = True
-
+    list_editable = ('name', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',  'data',)
     refresh_times = (3, 5)
     list_display = ('id', 'name', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',
-                    'data', 'create_time', 'modify_time', 'list_display_options',)
+                    'data', 'create_time', 'modify_time', 'last_run_status', 'list_display_options',)
     list_display_links = ('name',)
     readonly_fields = ('last_run_status',)
     search_fields = ('id', 'name', 'method', 'protocol', 'host', 'path',
-                     'create_time', 'modify_time',)
+                     'create_time', 'modify_time', 'last_run_status',)
     list_filter = ['id', 'name', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',
-                   'data', 'create_time', 'modify_time', ]
+                   'data', 'create_time', 'modify_time', 'last_run_status']
     # ('service_type', xadmin.filters.MultiSelectFieldListFilter)]
 
     list_bookmarks = []
@@ -254,4 +275,4 @@ xadmin.sites.site.register(Case, CaseAdmin)
 xadmin.sites.site.register(ReplayLog, ReplayLogAdmin)
 xadmin.sites.site.register(CaseTag, CaseTagAdmin)
 xadmin.sites.site.register(Variable, VariableAdmin)
-xadmin.sites.site.register(Assertion, AssertionAdmin)
+xadmin.sites.site.register(Assertion, AssertionAdmin) 

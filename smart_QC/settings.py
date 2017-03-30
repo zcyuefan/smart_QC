@@ -31,8 +31,18 @@ ALLOWED_HOSTS = ['*']
 
 SITE_ID = 1
 
+# django-celery config
+import djcelery
+djcelery.setup_loader()
+# Celery settings
+BROKER_URL = 'redis://127.0.0.1:6379'               # 指定 Broker
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'  # 指定 Backend
+#: Only add pickle to this list if your broker is secured
+#: from unwanted access (see userguide/security.html)
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -45,6 +55,9 @@ INSTALLED_APPS = [
     'reversion',
     'smart_QC.apps.website',
     'smart_QC.apps.test_api',
+    'djcelery',
+    # 'kombu.transport.django',  # 基于Django的broker
+    'smart_QC.apps.task'
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -210,5 +223,9 @@ LOGGING = {
     }
 }
 
+CELERY_TIMEZONE = TIME_ZONE
+
+# CELERY_ALWAYS_EAGER = True
+CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 # 针对不同环境引入不同的配置
 # from  settings_for_envs.dev import *
