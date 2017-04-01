@@ -16,7 +16,7 @@ class WorkerStateAdmin(object):
 
 
 class IntervalScheduleAdmin(object):
-    model_icon = 'fa fa-spinner'
+    model_icon = 'fa fa-repeat'
     reversion_enable = True
 
 
@@ -35,7 +35,7 @@ class PeriodicTaskAdmin(object):
         'kwargs',
     ]
     list_display = displayed_list
-    list_editable = [i for i in displayed_list if i not in ['__unicode__']]
+    list_editable = [i for i in displayed_list if i not in ['__unicode__', ]]
     list_display_links = ('__unicode__',)
     search_fields = ('name', '__unicode__', 'task')
     ordering = ('-enabled', 'name')

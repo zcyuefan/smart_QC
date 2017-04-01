@@ -78,7 +78,7 @@ ROOT_URLCONF = 'smart_QC.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'smart_QC/templates'.replace('\\', '/'))],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

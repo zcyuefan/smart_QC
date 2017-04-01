@@ -111,7 +111,7 @@ class TestHost(BaseModel):
 
     class Meta:
         verbose_name = 'Test Host'
-        verbose_name_plural = verbose_name
+        verbose_name_plural = verbose_name + 's'
 
 
 class TestEnvironment(BaseModel):
@@ -131,7 +131,7 @@ class CaseTag(BaseModel):
 
     class Meta:
         verbose_name = 'Case Tag'
-        verbose_name_plural = verbose_name
+        verbose_name_plural = verbose_name + 's'
 
 
 class OriginalAPI(BaseModel, RequestModel, ResponseModel):
@@ -169,7 +169,7 @@ class APITemplate(BaseModel, RequestModel, ResponseModel):
 
     class Meta:
         verbose_name = 'API Template'
-        verbose_name_plural = verbose_name
+        verbose_name_plural = verbose_name + 's'
 
 
 CASE_TYPE = (
@@ -205,7 +205,7 @@ class Variable(BaseModel):
 
     class Meta:
         verbose_name = 'Variable'
-        verbose_name_plural = verbose_name
+        verbose_name_plural = verbose_name + 's'
 
 
 class Assertion(BaseModel):
@@ -219,7 +219,7 @@ class Assertion(BaseModel):
 
     class Meta:
         verbose_name = 'Assertion'
-        verbose_name_plural = verbose_name
+        verbose_name_plural = verbose_name + 's'
 
 
 class Case(BaseModel, RequestModel):
@@ -243,7 +243,7 @@ class Case(BaseModel, RequestModel):
 
     class Meta:
         verbose_name = 'Case'
-        verbose_name_plural = verbose_name
+        verbose_name_plural = verbose_name + 's'
 
 Case._meta.get_field('method').blank = True
 Case._meta.get_field('protocol').blank = True

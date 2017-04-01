@@ -1,0 +1,79 @@
+{% extends base_template %}
+{% load i18n l10n %}
+{% block extrastyle %}{{ block.super }}
+   <style>
+    .controls {
+            background-color: white;
+            padding: 0 !important;
+}
+   .form-control{
+       width:90%
+   }
+    </style>
+    {#    <link href="/static/xadmin/vendor/select2/select2.css" type="text/css" media="screen" rel="stylesheet">#}
+    <link type="text/css" rel="stylesheet" href="css/smoothness/jquery-ui.css" />
+    {#    <link href="/static/xadmin/vendor/selectize/selectize.bootstrap3.css" type="text/css" media="screen"#}
+    {#          rel="stylesheet">#}
+{#    <script type="text/javascript" src="/static/xadmin/vendor/selectize/selectize.js"></script>#}
+    {#    <script type="text/javascript" src="/static/xadmin/vendor/select2/select2.js"></script>#}
+    {#    <script type="text/javascript" src="/static/xadmin/vendor/select2/select2_locale_en.js"></script>#}
+{% endblock %}
+{% load xadmin_tags %}
+
+{% block breadcrumbs %}
+    <ul class="breadcrumb">
+        <li><a href="{% url 'xadmin:index' %}">{% trans 'Home' %}</a></li>
+        <li><a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a></li>
+        <li>{% trans 'Run Selected ' %} {{ objects_name|capfirst }}</li>
+    </ul>
+{% endblock %}S
+{% block nav_title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <div class="alert alert-warning">{% blocktrans %}You can run selected cases in below ways:</br>
+        1. As an one-time task</br>
+        2. Copy the arguments and add a periodic task in Djcelery{% endblocktrans %}</div>
+    <div class="form-group col-sm-4">
+        <label class="control-label ">Test Environment</label><span class="asteriskField" style="color: red"> *</span>
+        <div class="controls">
+            <a href="/test_api/testenvironment/add/" title="Create New Test Environment"
+               class="btn btn-primary btn-sm btn-ajax pull-right"
+               target="_blank"><i
+                    class="fa fa-plus"></i></a>
+            <div class="control-wrap">
+                <select id="id_test_environment" name="test_environment" class="input-md form-control">
+                    {% for test_environment in test_environments %}
+                        <option value="{{ test_environment.id|unordered_list }}">{{ test_environment.name}}</option>
+                    {% endfor %}
+            </select>
+            </div>
+        </div>
+    </div>
+    <div class="control" style="clear:both;margin-left:17px">
+        <label class="control-label ">Case ID</label>
+        <label class="control-label ">&nbsp&nbsp&nbspName</label>
+        {% for execute_object in execute_objects %}
+            <ul class="model_ul">
+                {{ execute_object|unordered_list }}
+            </ul>
+        {% endfor %}
+    </div>
+    <form action="" method="post">{% csrf_token %}
+        <div>
+            {% for obj in queryset %}
+                <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk|unlocalize }}"/>
+            {% endfor %}
+            <input type="hidden" name="action" value="run_selected"/>
+            <input type="hidden" name="post" value="yes"/>
+            {% view_block 'form_fields' %}
+            <div class="form-actions well well-sm">
+                <input class="btn btn-danger btn-lg" type="submit" value="{% trans "Yes, run only once!" %}"/>
+                <input class="btn btn-danger btn-lg" type="button" onclick="javascript:history.back();"
+                       value="{% trans 'Copy arguments' %}"/>
+                <input class="btn btn-danger btn-lg" type="button" onclick="javascript:history.back();"
+                       value="{% trans 'Copy keyword arguments' %}"/>
+                <a class="btn btn-default pull-right" onclick="javascript:history.back();">{% trans 'Cancel' %}</a>
+            </div>
+        </div>
+    </form>
+{% endblock %}
