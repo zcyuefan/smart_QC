@@ -110,7 +110,7 @@ class RunCase(BaseActionView):
         perms_needed = [1, 2]
         protected = [1, 2]
         # test_environments = [1, 2, 3]
-        test_environments = [{'id': '1', 'name': 'trunk'}, {'id': '2', 'name': 'branch'}]
+        test_environments = [{'id': '1', 'name': 'trunk'}, {'id': '2', 'name': 'branch'}, {'id': '3', 'name': 'branch'}]
         context.update({
             "title": title,
             "objects_name": objects_name,
