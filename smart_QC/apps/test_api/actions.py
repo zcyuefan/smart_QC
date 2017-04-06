@@ -18,6 +18,8 @@ from django.template.response import TemplateResponse
 from django.core.exceptions import PermissionDenied
 from xadmin.views.base import filter_hook
 
+from models import TestEnvironment
+
 
 class RunCase1(BaseActionView):
 
@@ -103,21 +105,18 @@ class RunCase(BaseActionView):
         # if perms_needed or protected:
         #     title = _("Cannot delete %(name)s") % {"name": objects_name}
         # else:
-        title = _("Are you sure?")
+        title = _("Ready to run the selected cases?")
+
+        test_environments = TestEnvironment.objects.all()
 
         context = self.get_context()
         execute_objects = [2, 3]
-        perms_needed = [1, 2]
-        protected = [1, 2]
-        # test_environments = [1, 2, 3]
-        test_environments = [{'id': '1', 'name': 'trunk'}, {'id': '2', 'name': 'branch'}, {'id': '3', 'name': 'branch'}]
+
         context.update({
             "title": title,
             "objects_name": objects_name,
             "execute_objects": [execute_objects],
             'queryset': queryset,
-            "perms_lacking": perms_needed,
-            "protected": protected,
             "opts": self.opts,
             "app_label": self.app_label,
             'action_checkbox_name': ACTION_CHECKBOX_NAME,

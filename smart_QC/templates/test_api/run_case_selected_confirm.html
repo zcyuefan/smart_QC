@@ -9,14 +9,16 @@
    .form-control{
        width:90%
    }
+   .fl{float:left}
     </style>
     {#    <link href="/static/xadmin/vendor/select2/select2.css" type="text/css" media="screen" rel="stylesheet">#}
-    <link type="text/css" rel="stylesheet" href="css/smoothness/jquery-ui.css" />
+    <link type="text/css" rel="stylesheet" href="/static/vendor/jquery-ui/css/jquery-ui.css" />
     {#    <link href="/static/xadmin/vendor/selectize/selectize.bootstrap3.css" type="text/css" media="screen"#}
     {#          rel="stylesheet">#}
 {#    <script type="text/javascript" src="/static/xadmin/vendor/selectize/selectize.js"></script>#}
     {#    <script type="text/javascript" src="/static/xadmin/vendor/select2/select2.js"></script>#}
     {#    <script type="text/javascript" src="/static/xadmin/vendor/select2/select2_locale_en.js"></script>#}
+    <script type="text/javascript" src="/static/common/js/common.js"></script>
 {% endblock %}
 {% load xadmin_tags %}
 
@@ -34,29 +36,41 @@
         1. As an one-time task</br>
         2. Copy the arguments and add a periodic task in Djcelery{% endblocktrans %}</div>
     <div class="form-group col-sm-4">
-        <label class="control-label ">Test Environment</label><span class="asteriskField" style="color: red"> *</span>
-        <div class="controls">
-            <a href="/test_api/testenvironment/add/" title="Create New Test Environment"
-               class="btn btn-primary btn-sm btn-ajax pull-right"
-               target="_blank"><i
-                    class="fa fa-plus"></i></a>
-            <div class="control-wrap">
-                <select id="id_test_environment" name="test_environment" class="input-md form-control">
+        <label class="control-label fl" style="line-height: 40px">Test Environment</label><span class="asteriskField fl" style="color: red;line-height: 40px;margin:0 5px 0 5px"> *</span>
+        <div class="controls fl" style="width:65%;">
+            <div class="control-wrap" style="float:left;width:100%">
+                <select id="id_test_environment" name="test_environment" class="input-md form-control fl" style="width:80%;margin:5px;">
                     {% for test_environment in test_environments %}
-                        <option value="{{ test_environment.id|unordered_list }}">{{ test_environment.name}}</option>
+                        <option value="{{ test_environment.id }}">{{ test_environment.name }}</option>
                     {% endfor %}
-            </select>
+                </select>
+                <a href="/test_api/testenvironment/add/" title="Create New Test Environment"
+                   class="btn btn-primary btn-sm btn-ajax pull-right"
+                   target="_blank"><i
+                        class="fa fa-plus"></i></a>
             </div>
         </div>
     </div>
     <div class="control" style="clear:both;margin-left:17px">
-        <label class="control-label ">Case ID</label>
-        <label class="control-label ">&nbsp&nbsp&nbspName</label>
-        {% for execute_object in execute_objects %}
-            <ul class="model_ul">
-                {{ execute_object|unordered_list }}
-            </ul>
-        {% endfor %}
+{#        <label class="control-label ">Case ID</label>#}
+{#        <label class="control-label ">&nbsp&nbsp&nbspName</label>#}
+        <table id="sort" class="table table-hover">
+{#            <caption>Cases</caption>#}
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for obj in queryset %}
+                <tr>
+                <td>{{ obj.id }}</td>
+                <td>{{ obj.name }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
     <form action="" method="post">{% csrf_token %}
         <div>
