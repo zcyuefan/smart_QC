@@ -171,15 +171,15 @@ class CaseAdmin(object):
     # list_display = ('record_module', )
     model_icon = 'fa fa-code'
     reversion_enable = True
-    list_editable = ('name', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',  'data',)
+    list_editable = ('name', 'case_type', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',  'data',)
     refresh_times = (3, 5)
-    list_display = ('id', 'name', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',
-                    'data', 'create_time', 'modify_time', 'last_run_status', 'list_display_options',)
+    list_display = ('id', 'name', 'case_type', 'invoke_cases', 'tag', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',
+                    'data', 'last_run_status', 'list_display_options',)
     list_display_links = ('name',)
     readonly_fields = ('last_run_status',)
-    search_fields = ('id', 'name', 'method', 'protocol', 'host', 'path',
+    search_fields = ('id', 'name', 'case_type', 'invoke_cases', 'tag', 'method', 'protocol', 'host', 'path',
                      'create_time', 'modify_time', 'last_run_status',)
-    list_filter = ['id', 'name', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',
+    list_filter = ['id', 'name', 'case_type', 'invoke_cases', 'tag', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',
                    'data', 'create_time', 'modify_time', 'last_run_status']
     # ('service_type', xadmin.filters.MultiSelectFieldListFilter)]
 

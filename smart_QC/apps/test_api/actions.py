@@ -55,7 +55,7 @@ class FailCase(BaseActionView):
 class RunCase(BaseActionView):
 
     action_name = "run_selected"
-    description = _(u'Wahaha selected %(verbose_name_plural)s')
+    description = _(u'Run selected %(verbose_name_plural)s')
 
     model_perm = 'change'
     icon = 'fa fa-play'

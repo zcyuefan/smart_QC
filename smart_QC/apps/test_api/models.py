@@ -228,7 +228,7 @@ class Case(BaseModel, RequestModel):
     """
     case_type = models.SmallIntegerField(default=0, choices=CASE_TYPE)
     invoke_cases = models.ManyToManyField('self', symmetrical=False, blank=True)
-    template = models.ForeignKey(APITemplate, blank=True)
+    template = models.ForeignKey(APITemplate, blank=True, null=True)
     tag = models.ManyToManyField(CaseTag, blank=True)
     # params,request_headers,data,setup,teardown支持参数化
     setup = models.TextField(blank=True, help_text='Python code to run before sending the request.')
@@ -248,6 +248,7 @@ class Case(BaseModel, RequestModel):
 Case._meta.get_field('method').blank = True
 Case._meta.get_field('protocol').blank = True
 Case._meta.get_field('host').blank = True
+Case._meta.get_field('host').null = True
 Case._meta.get_field('path').blank = True
 
 

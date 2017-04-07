@@ -57,7 +57,7 @@ INSTALLED_APPS = [
     'smart_QC.apps.test_api',
     'djcelery',
     # 'kombu.transport.django',  # 基于Django的broker
-    'smart_QC.apps.task'
+    'smart_QC.apps.task',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -170,10 +170,11 @@ DATE_FORMAT = 'Y-m-d'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
-STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'smart_QC/smart_QC/static').replace('\\', '/')
+STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'smart_QC/staticfiles/').replace('\\', '/')
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = []
+STATICFILES_DIRS = [os.path.join(os.path.dirname(BASE_DIR), 'smart_QC/smart_QC/static').replace('\\', '/'),
+                    ]
 
 MEDIA_URL = '/media/'
 
