@@ -51,10 +51,9 @@
     </div>
     <div class="control" style="clear:both">
         <h4 style="color:#447e9b;background:lightblue;padding: 5px;width:auto;float: left;clear:both">{% blocktrans %}
-            Click header to sort, or drag and pull rows, or edit the arguments directly!
-            directly!{% endblocktrans %}</h4>
+            Click table header to sort, drag and pull rows, or edit the arguments directly!{% endblocktrans %}</h4>
         <div style="clear:both;width: 49%;float:left">
-            <label>Case</label>
+            <label>Cases</label>
             <table id="id_case" class="tablesorter table table-bordered table-striped table-hover">
                 <thead>
                 <tr>
@@ -72,22 +71,21 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="controls" style="width:49%;float: right">
-            <label>Arguments</label>
-            <textarea id="id_arguments"  style="width: 100%;height: 500px"></textarea>
-        </div>
     </div>
     <form action="" method="post">{% csrf_token %}
         <div>
             {% for obj in queryset %}
                 <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk|unlocalize }}"/>
             {% endfor %}
+            <div class="controls" style="width:49%;float: right">
+                <label>Arguments</label>
+                <textarea id="id_arguments" name="arguments" style="width: 100%;height: 500px"></textarea>
+            </div>
             <input type="hidden" name="action" value="run_selected"/>
             <input type="hidden" name="post" value="yes"/>
             {% view_block 'form_fields' %}
             <div class="form-actions well well-sm fixed">
-                <input class="btn btn-danger btn-lg" type="submit" value="{% trans "Run an one-time task!" %}"/>
+                <input class="btn btn-danger btn-lg" type="submit" value="{% trans "Run only once!" %}"/>
                 <a class="btn btn-default pull-right" onclick="javascript:history.back();">{% trans 'Cancel' %}</a>
             </div>
         </div>

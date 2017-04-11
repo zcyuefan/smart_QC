@@ -9,7 +9,7 @@
 """
 file doc
 """
-
+from __future__ import unicode_literals
 from xadmin.plugins.actions import BaseActionView, ACTION_CHECKBOX_NAME
 from django.utils.translation import ugettext as _
 from django.utils.encoding import force_unicode
@@ -19,6 +19,7 @@ from django.core.exceptions import PermissionDenied
 from xadmin.views.base import filter_hook
 
 from models import TestEnvironment
+from tasks import run_case
 
 
 class RunCase1(BaseActionView):
@@ -66,14 +67,32 @@ class RunCase(BaseActionView):
         if n:
             queryset.update(last_run_status='1')
             # 调用task 方法，进行异步请求
+            arguments_str = self.request.POST.get('arguments', '')
+            if arguments_str:
+                try:
+                    arguments_obj = eval(arguments_str)
+                    selected_environment = arguments_obj.get('test_environment', '')
+                    selected_case = arguments_obj.get('case', '')
+                    if int(selected_environment.get('id')) and isinstance(selected_case, list):
+                        run_case(test_environment=selected_environment, case=selected_case)
+                        # run_case.delay(test_environment=selected_environment, case=selected_case)
+                        self.message_user(_("Successfully add the task to run the %(count)d %(items)s.") % {
+                            "count": n, "items": "case"
+                        }, 'success')
+                    else:
+                        self.message_user(_('Invalid environment or case!'),
+                                          'error')
+                except Exception:
+                    import traceback
+                    print(traceback.format_exc())
+                    self.message_user(_('Invalid arguments, please select valid test environment and case!'), 'error')
+            else:
+                self.message_user(_('Arguments field is required!'), 'error')
         #     if self.delete_models_batch:
         #         queryset.delete()
         #     else:
         #         for obj in queryset:
         #             obj.delete()
-        #     self.message_user(_("Successfully deleted %(count)d %(items)s.") % {
-        #         "count": n, "items": model_ngettext(self.opts, n)
-        #     }, 'success')
 
     # @filter_hook
     def do_action(self, queryset):

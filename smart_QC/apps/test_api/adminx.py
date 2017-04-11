@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # encoding=utf-8
 # Register your models here.
+from __future__ import unicode_literals
 import xadmin
 from xadmin import views
 from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Variable, Assertion
