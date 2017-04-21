@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'multiselectfield',
     'xadmin',
     'crispy_forms',
     'reversion',
@@ -229,8 +230,5 @@ CELERY_TIMEZONE = TIME_ZONE
 # CELERY_ALWAYS_EAGER = True
 CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 
-# 限制api group调用其他用例的层数，避免相互调用产生死循环
-SMART_QC_INVOKE_LEVEL_FROM = 1
-SMART_QC_INVOKE_LEVEL_TO = 3
 # 针对不同环境引入不同的配置
 # from  settings_for_envs.dev import *

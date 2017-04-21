@@ -4,7 +4,8 @@
 from __future__ import unicode_literals
 import xadmin
 from xadmin import views
-from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Variable, Assertion
+# from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Variable, Assertion
+from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Script
 from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Col, AppendedText, Side
 from xadmin.plugins.inline import Inline
 # from xadmin.plugins.batch import BatchChangeAction
@@ -255,18 +256,38 @@ class ReplayLogAdmin(object):
     reversion_enable = True
 
 
-class VariableAdmin(object):
+class ScriptAdmin(object):
     # list_display = ('record_module', )
     list_select_related = True
     model_icon = 'fa fa-edit'
     reversion_enable = True
+    # from multiselectfield import MultiSelectField
+    # from xadmin.plugins.multiselect import SelectMultipleDropdown
+    # formfield_overrides = {
+    #     MultiSelectField: {'widget': SelectMultipleDropdown},
+    # }
+    # from django.db import models
+    # from django.forms import Select
+    # from multiselectfield import MultiSelectField
+    # formfield_overrides = {
+    #     MultiSelectField: {'widget': Select},
+    # }
+    # style_fields = {'description': 'm2m_transfer',
+    #                 }
 
 
-class AssertionAdmin(object):
-    # list_display = ('record_module', )
-    list_select_related = True
-    model_icon = 'fa fa-check'
-    reversion_enable = True
+# class VariableAdmin(object):
+#     # list_display = ('record_module', )
+#     list_select_related = True
+#     model_icon = 'fa fa-edit'
+#     reversion_enable = True
+#
+#
+# class AssertionAdmin(object):
+#     # list_display = ('record_module', )
+#     list_select_related = True
+#     model_icon = 'fa fa-check'
+#     reversion_enable = True
 
 xadmin.sites.site.register(TestHost, TestHostAdmin)
 xadmin.sites.site.register(TestEnvironment, TestEnvironmentAdmin)
@@ -275,5 +296,6 @@ xadmin.sites.site.register(APITemplate, APITemplateAdmin)
 xadmin.sites.site.register(Case, CaseAdmin)
 xadmin.sites.site.register(ReplayLog, ReplayLogAdmin)
 xadmin.sites.site.register(CaseTag, CaseTagAdmin)
-xadmin.sites.site.register(Variable, VariableAdmin)
-xadmin.sites.site.register(Assertion, AssertionAdmin) 
+xadmin.sites.site.register(Script, ScriptAdmin)
+# xadmin.sites.site.register(Variable, VariableAdmin)
+# xadmin.sites.site.register(Assertion, AssertionAdmin)

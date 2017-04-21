@@ -27,6 +27,7 @@ import sqlite3
 import pytz
 from datetime import datetime
 from bs4 import BeautifulSoup
+
 # import pyodbc
 
 server = 'localhost'
@@ -130,42 +131,45 @@ CREATE TABLE [dbo].[S](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 '''
 
+
 def file_get_contents(filename):
     with open(filename) as f:
         return f.read()
+
 
 def log(text):
     file = open('SQLStatements.txt', 'a')
     file.write(text + "\n")
     file.close()
 
+
 def checkDB(db_name):
     conn = sqlite3.connect(db_name)
 
     cur = conn.cursor()
-    tables = cur.execute("select name from sqlite_master;")
+    tables = cur.execute("SELECT name FROM sqlite_master;")
     all_tables = [x[0] for x in tables.fetchall()]
 
     # check that the table at least has the 4 main tables.
     if (set(all_tables) & set(['C', 'S', 'M', 'browsing_history']) != set(['C', 'S', 'M', 'browsing_history'])):
         # check the db for these table(s):
         str_make_table_browsing_history = "CREATE TABLE 'browsing_history' (	'ID'	INTEGER,	'Result'	NUMERIC,	'Protocol'	TEXT,	'Host'	TEXT,	'URL'	TEXT,	" \
-                         "'Body'	INTEGER,	'Caching'	TEXT,	'ContentType'	TEXT,	'Process'	TEXT,	'Comments'	TEXT, " \
-                         "'Custom'	TEXT, 'CID'	INTEGER, 'SID'	INTEGER, 'MID'	INTEGER, PRIMARY KEY(ID) );"
+                                          "'Body'	INTEGER,	'Caching'	TEXT,	'ContentType'	TEXT,	'Process'	TEXT,	'Comments'	TEXT, " \
+                                          "'Custom'	TEXT, 'CID'	INTEGER, 'SID'	INTEGER, 'MID'	INTEGER, PRIMARY KEY(ID) );"
 
         str_make_table_c = "CREATE TABLE 'C' (	'CID'	INTEGER,	'Method'	TEXT,  'URL' TEXT, 'Version' TEXT,	'Host'	TEXT,	'Connection'	TEXT,	'Content_Length'	INTEGER,	'Accept'	TEXT, " \
-                        "'Origin'	TEXT, 	'User_Agent'	TEXT,	'Content_Type'	TEXT,	'Referer'	TEXT,	'Accept_Encoding'	TEXT,	'Accept_Language'	TEXT,	'Cookie'	TEXT, " \
-                        "'JSONRequest'	TEXT, 	PRIMARY KEY(CID));"
+                           "'Origin'	TEXT, 	'User_Agent'	TEXT,	'Content_Type'	TEXT,	'Referer'	TEXT,	'Accept_Encoding'	TEXT,	'Accept_Language'	TEXT,	'Cookie'	TEXT, " \
+                           "'JSONRequest'	TEXT, 	PRIMARY KEY(CID));"
 
         str_make_table_s = "CREATE TABLE 'S' (	'SID'	INTEGER,	'Cache_Control'	TEXT,	'Content_Type'	TEXT,	'Content_Length' INTEGER, 'Server'	TEXT,	'X_AspNetMvc_Version'	NUMERIC,	" \
-                        "'X_AspNet_Version'	NUMERIC,	'X_SourceFiles'	TEXT,	'WWW_Authenticate'	TEXT,	'WWW_Authenticate2'	TEXT,	'X_Powered_By'	TEXT,	'Date'	TEXT, " \
-                        "'Proxy_Support'	TEXT,	'Response'	TEXT, 'Version' TEXT, 'StatusCode' TEXT, 'Status' TEXT, 'JSONRequest' TEXT,  PRIMARY KEY(SID));"
+                           "'X_AspNet_Version'	NUMERIC,	'X_SourceFiles'	TEXT,	'WWW_Authenticate'	TEXT,	'WWW_Authenticate2'	TEXT,	'X_Powered_By'	TEXT,	'Date'	TEXT, " \
+                           "'Proxy_Support'	TEXT,	'Response'	TEXT, 'Version' TEXT, 'StatusCode' TEXT, 'Status' TEXT, 'JSONRequest' TEXT,  PRIMARY KEY(SID));"
 
         str_make_table_m = "CREATE TABLE 'M' (	'MID'	INTEGER,	'ClientConnected'	TEXT,	'ClientBeginRequest'	TEXT,	'GotRequestHeaders'	TEXT, " \
-                        "'ClientDoneRequest'	TEXT,	'GatewayTime'	TEXT,	'DNSTime'	TEXT,	'TCPConnectTime'	TEXT,	'HTTPSHandshakeTime'	TEXT,	'ServerConnected'	TEXT, " \
-                        "'FiddlerBeginRequest'	TEXT,	'ServerGotRequest'	TEXT,	'ServerBeginResponse'	TEXT,	'GotResponseHeaders'	TEXT,	'ServerDoneResponse'	TEXT, " \
-                        "'ClientBeginResponse'	TEXT,	'ClientDoneResponse'	TEXT,	'x_egressport'	INTEGER,	'x_responsebodytransferlength'	INTEGER,	'x_clientport'	INTEGER, " \
-                        "'x_clientip'	TEXT,	'x_serversocket'	TEXT,	'x_hostip'	TEXT,	'x_processinfo'	TEXT, 	PRIMARY KEY(MID));"
+                           "'ClientDoneRequest'	TEXT,	'GatewayTime'	TEXT,	'DNSTime'	TEXT,	'TCPConnectTime'	TEXT,	'HTTPSHandshakeTime'	TEXT,	'ServerConnected'	TEXT, " \
+                           "'FiddlerBeginRequest'	TEXT,	'ServerGotRequest'	TEXT,	'ServerBeginResponse'	TEXT,	'GotResponseHeaders'	TEXT,	'ServerDoneResponse'	TEXT, " \
+                           "'ClientBeginResponse'	TEXT,	'ClientDoneResponse'	TEXT,	'x_egressport'	INTEGER,	'x_responsebodytransferlength'	INTEGER,	'x_clientport'	INTEGER, " \
+                           "'x_clientip'	TEXT,	'x_serversocket'	TEXT,	'x_hostip'	TEXT,	'x_processinfo'	TEXT, 	PRIMARY KEY(MID));"
 
         try:
             conn.execute(str_make_table_browsing_history)
@@ -198,6 +202,7 @@ def checkDB(db_name):
     # re-evaluate: are there at least these 4 tables?
     return set(all_tables) & set(['C', 'S', 'M', 'browsing_history']) == set(['C', 'S', 'M', 'browsing_history'])
 
+
 class browsing_history:
     ID = ""
     Result = ""
@@ -216,9 +221,12 @@ class browsing_history:
 
     def save(self):
         self.Body = self.Body.replace(",", "").strip()
-        vals = (self.Result, self.Protocol, self.Host, self.URL, self.Body, self.Caching, self.ContentType, self.Process, self.Comments, self.Custom, self.CID, self.SID, self.MID)
+        vals = (
+        self.Result, self.Protocol, self.Host, self.URL, self.Body, self.Caching, self.ContentType, self.Process,
+        self.Comments, self.Custom, self.CID, self.SID, self.MID)
         new_record = "INSERT INTO browsing_history (Result, Protocol, Host, URL, Body, Caching, ContentType, Process, Comments, Custom, CID, SID, MID) " \
-                "VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', {10}, {11}, {12})".format(*vals)
+                     "VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', {10}, {11}, {12})".format(
+            *vals)
 
         new_record = new_record.replace("'NULL'", "NULL")
         log('\n' + new_record)
@@ -231,6 +239,7 @@ class browsing_history:
             dbCursor.commit()
         except pyodbc.DataError as e:
             log("--" + e.args[1])
+
 
 class C:
     CID = ""
@@ -300,10 +309,12 @@ class C:
         self.save()
 
     def save(self):
-        vals = (self.CID, self.Method, self.URL, self.Version, self.Host, self.Connection, self.Accept, self.Origin, self.User_Agent, self.Content_Length, self.Content_Type, self.Referer, \
+        vals = (self.CID, self.Method, self.URL, self.Version, self.Host, self.Connection, self.Accept, self.Origin,
+                self.User_Agent, self.Content_Length, self.Content_Type, self.Referer, \
                 self.Accept_Encoding, self.Accept_Language, self.Cookie, self.JSONRequest)
         new_record = "INSERT INTO C (CID, Method, URL, Version, Host, Connection, Accept, Origin, User_Agent, Content_Length, Content_Type, Referer, " \
-                "Accept_Encoding, Accept_Language, Cookie, JSONRequest) VALUES ({0}, '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', '{10}', '{11}', '{12}', '{13}', '{14}', '{15}')".format(*vals)
+                     "Accept_Encoding, Accept_Language, Cookie, JSONRequest) VALUES ({0}, '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', '{10}', '{11}', '{12}', '{13}', '{14}', '{15}')".format(
+            *vals)
 
         new_record = new_record.replace("'NULL'", "")
 
@@ -317,6 +328,7 @@ class C:
             dbCursor.commit()
         except pyodbc.DataError as e:
             log("--" + e.args[1])
+
 
 class S:
     SID = ""
@@ -405,7 +417,8 @@ class S:
                 return empty
 
         self.JSONRequest = self.JSONRequest.replace("\n", "")
-        (self.X_AspNetMvc_Version, self.X_AspNet_Version, self.StatusCode) = (nullify(self.X_AspNet_Version), nullify(self.X_AspNet_Version), nullify(self.StatusCode))
+        (self.X_AspNetMvc_Version, self.X_AspNet_Version, self.StatusCode) = (
+        nullify(self.X_AspNet_Version), nullify(self.X_AspNet_Version), nullify(self.StatusCode))
 
         # self.date is of the format
         # Tue, 13 Sep 2016 20:12:47 GMT
@@ -416,11 +429,15 @@ class S:
         dateeastern = dategmt.astimezone(eastern)
         self.Date = datetime.strftime(dateeastern, '%Y-%m-%d %H:%M:%S')
 
-        vals = (self.SID, self.Cache_Control, self.Content_Type, self.Content_Length, self.Server, self.X_AspNetMvc_Version, self.X_AspNet_Version, \
-                self.X_SourceFiles, self.WWW_Authenticate, self.WWW_Authenticate2, self.X_Powered_By, self.Date, self.Proxy_Support, self.Response, self.Version, self.StatusCode, self.Status, self.JSONRequest)
+        vals = (
+        self.SID, self.Cache_Control, self.Content_Type, self.Content_Length, self.Server, self.X_AspNetMvc_Version,
+        self.X_AspNet_Version, \
+        self.X_SourceFiles, self.WWW_Authenticate, self.WWW_Authenticate2, self.X_Powered_By, self.Date,
+        self.Proxy_Support, self.Response, self.Version, self.StatusCode, self.Status, self.JSONRequest)
         new_record = "INSERT INTO S (SID, Cache_Control, Content_Type, Content_Length, Server, X_AspNetMvc_Version, X_AspNet_Version, \
                       X_SourceFiles, WWW_Authenticate, WWW_Authenticate2, X_Powered_By, Date, Proxy_Support, Response, Version, StatusCode, Status, JSONRequest) \
-                      VALUES ({0}, '{1}', '{2}', '{3}', '{4}', {5}, {6}, '{7}', '{8}', '{9}', '{10}', '{11}', '{12}', '{13}', '{14}', '{15}', '{16}', '{17}')".format(*vals)
+                      VALUES ({0}, '{1}', '{2}', '{3}', '{4}', {5}, {6}, '{7}', '{8}', '{9}', '{10}', '{11}', '{12}', '{13}', '{14}', '{15}', '{16}', '{17}')".format(
+            *vals)
 
         new_record = new_record.replace("'NULL'", "NULL")
 
@@ -434,6 +451,7 @@ class S:
             dbCursor.commit()
         except pyodbc.DataError as e:
             log("--" + e.args[1])
+
 
 class M:
     MID = ""
@@ -518,7 +536,7 @@ class M:
                     return 'NULL'
 
                 if (fiddlerDate == '0001-01-01T00:00:00'):
-                    return  'NULL'
+                    return 'NULL'
 
                 fiddlerDate_part1 = fiddlerDate.split(".")
                 # fiddler uses 7 digits accuracy, SQL server likes 3:
@@ -547,9 +565,12 @@ class M:
         self.ClientDoneResponse = convertToDateTime(self.ClientDoneResponse)
         self.x_responsebodytransferlength = self.x_responsebodytransferlength.replace(",", "").strip()
 
-        vals = (self.MID, self.ClientConnected, self.ClientBeginRequest, self.GotRequestHeaders, self.ClientDoneRequest, self.GatewayTime, self.DNSTime, self.TCPConnectTime, \
-                self.HTTPSHandshakeTime, self.ServerConnected, self.FiddlerBeginRequest, self.ServerGotRequest, self.ServerBeginResponse, self.GotResponseHeaders, \
-                self.ServerDoneResponse, self.ClientBeginResponse, self.ClientDoneResponse, self.x_egressport, self.x_responsebodytransferlength, self.x_clientport, \
+        vals = (self.MID, self.ClientConnected, self.ClientBeginRequest, self.GotRequestHeaders, self.ClientDoneRequest,
+                self.GatewayTime, self.DNSTime, self.TCPConnectTime, \
+                self.HTTPSHandshakeTime, self.ServerConnected, self.FiddlerBeginRequest, self.ServerGotRequest,
+                self.ServerBeginResponse, self.GotResponseHeaders, \
+                self.ServerDoneResponse, self.ClientBeginResponse, self.ClientDoneResponse, self.x_egressport,
+                self.x_responsebodytransferlength, self.x_clientport, \
                 self.x_clientip, self.x_serversocket, self.x_hostip, self.x_processinfo)
         new_record = "INSERT INTO M (MID, ClientConnected, ClientBeginRequest, GotRequestHeaders, ClientDoneRequest, GatewayTime, DNSTime, TCPConnectTime, \
                         HTTPSHandshakeTime, ServerConnected, FiddlerBeginRequest, ServerGotRequest, ServerBeginResponse, GotResponseHeaders, \
@@ -569,6 +590,7 @@ class M:
             dbCursor.commit()
         except pyodbc.DataError as e:
             log("--" + e.args[1])
+
 
 def parseSaz(folder_name, file_name):
     # this folder should contain an HTML file
@@ -663,6 +685,7 @@ def parseSaz(folder_name, file_name):
 
         # now close the db
         current_record.conn.close()
+
 
 if __name__ == '__main__':
     try:

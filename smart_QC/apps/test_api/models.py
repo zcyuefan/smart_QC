@@ -2,10 +2,11 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from django import forms
 from smart_QC.libs.json_field import JSONField
+from multiselectfield import MultiSelectField
 from smart_QC.libs.model_tools import BaseModel, AbstractClassWithoutFieldsNamed as without
 from django.utils.translation import ugettext_lazy as _
-
 
 # Create your models here.
 REQUEST_METHODS = (
@@ -81,10 +82,11 @@ class RequestModel(models.Model):
     method = models.CharField(max_length=10, choices=REQUEST_METHODS)
     protocol = models.CharField(default='https', max_length=10)
     host = models.ForeignKey('TestHost', to_field='name')
-    path = models.CharField(max_length=30)
+    path = models.CharField(max_length=255)
     # params,headers,data are all saved with dict
     params = JSONField(default='', blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
-    request_headers = JSONField(default='', blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
+    request_headers = JSONField(default='', blank=True, ignore_error=True,
+                                encoder_kwargs={'indent': 4, 'ensure_ascii': False})
     data = JSONField(default='', blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
 
     class Meta:
@@ -93,8 +95,10 @@ class RequestModel(models.Model):
 
 class ResponseModel(models.Model):
     status_code = models.CharField(max_length=10, choices=STATUS_CODES)
-    response_headers = JSONField(default='', blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
-    response_content = JSONField(default='', blank=True, ignore_error=True, encoder_kwargs={'indent': 4, 'ensure_ascii': False})
+    response_headers = JSONField(default='', blank=True, ignore_error=True,
+                                 encoder_kwargs={'indent': 4, 'ensure_ascii': False})
+    response_content = JSONField(default='', blank=True, ignore_error=True,
+                                 encoder_kwargs={'indent': 4, 'ensure_ascii': False})
 
     class Meta:
         abstract = True
@@ -149,6 +153,8 @@ class OriginalAPI(BaseModel, RequestModel, ResponseModel):
     class Meta:
         verbose_name = 'Original API'
         verbose_name_plural = verbose_name
+
+
 OriginalAPI._meta.get_field('name').blank = True
 
 
@@ -177,7 +183,6 @@ CASE_TYPE = (
     (1, 'APIGroup'),
 )
 
-
 RUN_STATUS = (
     (0, 'Not Run'),
     (1, 'Running'),
@@ -185,41 +190,83 @@ RUN_STATUS = (
     (3, 'SUCCESS'),
 )
 
+# class Variable(BaseModel):
+#     """
+#     参数化数据模型，借鉴RobotFramework参数化的方法，定义${},@{},&{}三种值类型的参数，借鉴evaluate关键字（eval方法）运行生成
+#     动态参数值，借鉴rf的find_var方法找到参数，并写一个装饰器处理用例运行过程中所有环节的参数化
+#     """
+#     VAR_TYPE = (
+#         (1, 'Static'),
+#         (2, 'Evaluate'),
+#     )
+#     var_type = models.SmallIntegerField(default=1, choices=VAR_TYPE)  # var_type=1,表示直接取静态值
+#     expression = models.TextField()  # var_type=1时存入静态值，2时存入表达式
+#     modules = models.CharField(max_length=100, blank=True)
+#     namespace = models.CharField(max_length=20, blank=True)
+#
+#     def __str__(self):
+#         return self.name
+#
+#     class Meta:
+#         verbose_name = 'Variable'
+#         verbose_name_plural = verbose_name + 's'
 
-class Variable(BaseModel):
+LANGUAGES = (
+    ('python', 'python'),
+)
+
+SCOPE = (
+    (1, 'Assertion'),
+    (2, 'Evaluate'),
+)
+
+
+class Script(BaseModel):
     """
-    参数化数据模型，借鉴RobotFramework参数化的方法，定义${},@{},&{}三种值类型的参数，借鉴evaluate关键字（eval方法）运行生成
-    动态参数值，借鉴rf的find_var方法找到参数，并写一个装饰器处理用例运行过程中所有环节的参数化
+
     """
-    VAR_TYPE = (
-        (1, 'Static'),
-        (2, 'Evaluate'),
-    )
-    var_type = models.SmallIntegerField(default=1, choices=VAR_TYPE)  # var_type=1,表示直接取静态值
-    expression = models.TextField()  # var_type=1时存入静态值，2时存入表达式
-    modules = models.CharField(max_length=100, blank=True)
-    namespace = models.CharField(max_length=20, blank=True)
+    # from django.contrib.postgres.fields import ArrayField
+    language = models.CharField(default="python", max_length=60, choices=LANGUAGES)
+    scope = models.CommaSeparatedIntegerField(max_length=10)
+    # scope = MultiSelectField(choices=SCOPE)
+    # choices = ArrayField(
+    #     models.CharField(choices=SCOPE, max_length=2, blank=True),
+    # )    # scope = models.SmallIntegerField(default=1, choices=SCOPE)  # var_type=1,表示直接取静态值
+    return_variable = models.CharField(max_length=70, blank=True, null=True, unique=True, default=None,
+                                       help_text="""Fill a unique variable name, then it can be referenced
+                                                 by ${variable} syntax! Or just leave blank.""")
+    is_constant = models.BooleanField(default=False, help_text="If checked, return variable will be a constant with value of code field")
+    modules = models.CharField(max_length=255, blank=True, help_text="Extra modules to import, splited by ','")
+    namespace = models.CharField(max_length=255, blank=True, help_text="Extra namespace, use json string!")
+    code = models.TextField(blank=True, help_text="Code string to run or constant value")
 
     def __str__(self):
         return self.name
 
+    def clean(self):
+        """
+        Clean up blank fields to null
+        """
+        if self.return_variable == "" or (self.return_variable is not None and self.return_variable.strip() == ""):
+            self.return_variable = None
+
     class Meta:
-        verbose_name = 'Variable'
+        verbose_name = 'Script'
         verbose_name_plural = verbose_name + 's'
 
 
-class Assertion(BaseModel):
-    """
-    断言数据模型
-    """
-    is_default = models.BooleanField(default=False)  # True表示在用例没有关联断言时，运行默认断言
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = 'Assertion'
-        verbose_name_plural = verbose_name + 's'
+# class Assertion(BaseModel):
+#     """
+#     断言数据模型
+#     """
+#     is_default = models.BooleanField(default=False)  # True表示在用例没有关联断言时，运行默认断言
+#
+#     def __str__(self):
+#         return self.name
+#
+#     class Meta:
+#         verbose_name = 'Assertion'
+#         verbose_name_plural = verbose_name + 's'
 
 
 class Case(BaseModel, RequestModel):
@@ -231,11 +278,11 @@ class Case(BaseModel, RequestModel):
     template = models.ForeignKey(APITemplate, blank=True, null=True)
     tag = models.ManyToManyField(CaseTag, blank=True)
     # params,request_headers,data,setup,teardown支持参数化
-    setup = models.TextField(blank=True, help_text='Python code to run before sending the request.')
-    teardown = models.TextField(blank=True, help_text='Python code to run after request sent.')
+    # setup = models.TextField(blank=True, help_text='Python code to run before sending the request.')
+    # teardown = models.TextField(blank=True, help_text='Python code to run after request sent.')
     #
-    assertions = models.ManyToManyField(Assertion, blank=True)  # 逗号分隔的断言id
-    generated_vars = models.ManyToManyField(Variable, blank=True)  # 关联生成的variable数据，执行后更新variable
+    # assertions = models.ManyToManyField(Assertion, blank=True)  # 逗号分隔的断言id
+    # generated_vars = models.ManyToManyField(Variable, blank=True, through_fields=)  # 关联生成的variable数据，执行后更新variable
     last_run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
 
     def __str__(self):
@@ -244,6 +291,7 @@ class Case(BaseModel, RequestModel):
     class Meta:
         verbose_name = 'Case'
         verbose_name_plural = verbose_name + 's'
+
 
 Case._meta.get_field('method').blank = True
 Case._meta.get_field('protocol').blank = True
@@ -266,11 +314,12 @@ class ReplayLog(models.Model):
 
     def __str__(self):
         return '[%s] [%s] [%s] [%s]' % (self.version, self.case.name,
-                                      self.replay_time.strftime('%Y-%m-%d %H:%M:%S'), RUN_STATUS[self.run_status][1],)
+                                        self.replay_time.strftime('%Y-%m-%d %H:%M:%S'), RUN_STATUS[self.run_status][1],)
 
     class Meta:
         verbose_name = 'Replay Log'
         verbose_name_plural = verbose_name
+
 # class PICTScript(models.Model):
 #     """
 #     在线生成或者上传pict(Pairwise Independent Combinatorial Testing tool)脚本，输出分析结果，用于自动生成测试用例
@@ -279,7 +328,3 @@ class ReplayLog(models.Model):
 #     in_put = models.TextField()
 #     command = models.CharField(max_length=20)
 #     out_put = models.TextField()
-
-
-
-
