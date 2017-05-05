@@ -81,15 +81,12 @@ def _single_api_replay(valid_hosts, case):
     req = requests.Request(method=case.method, url=send_url, headers=send_headers, data=send_data,
                            params=send_params).prepare()
     res = s.send(req, verify=False)
-    from robot.running.builder import StepBuilder
-    # step = StepBuilder()
     from robot.libraries.BuiltIn import _Misc
     a=_Misc()
     ns = {"${hh}":4}
     # b=a.evaluate('random.randint(0, hh) ', modules='random, sys', namespace=ns)
     c=a.evaluate('1 + ${hh}', namespace=ns)
     print(c)
-    # from robot.
     # after request: asserting, run teardown, new or update variables
     print(res.request.url)
     print(res.content)

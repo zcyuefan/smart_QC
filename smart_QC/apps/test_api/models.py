@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 from django.db import models
 from django import forms
 from smart_QC.libs.json_field import JSONField
-from multiselectfield import MultiSelectField
 from smart_QC.libs.model_tools import BaseModel, AbstractClassWithoutFieldsNamed as without
 from django.utils.translation import ugettext_lazy as _
 
@@ -215,9 +214,12 @@ LANGUAGES = (
     ('python', 'python'),
 )
 
-SCOPE = (
-    (1, 'Assertion'),
-    (2, 'Evaluate'),
+USAGE = (
+    (1, 'Variable'),
+    (2, 'Assertion'),
+    (3, 'Setup'),
+    (4, 'Teardown'),
+    (5, 'Other'),
 )
 
 
@@ -225,20 +227,14 @@ class Script(BaseModel):
     """
 
     """
-    # from django.contrib.postgres.fields import ArrayField
     language = models.CharField(default="python", max_length=60, choices=LANGUAGES)
-    scope = models.CommaSeparatedIntegerField(max_length=10)
-    # scope = MultiSelectField(choices=SCOPE)
-    # choices = ArrayField(
-    #     models.CharField(choices=SCOPE, max_length=2, blank=True),
-    # )    # scope = models.SmallIntegerField(default=1, choices=SCOPE)  # var_type=1,表示直接取静态值
-    return_variable = models.CharField(max_length=70, blank=True, null=True, unique=True, default=None,
-                                       help_text="""Fill a unique variable name, then it can be referenced
-                                                 by ${variable} syntax! Or just leave blank.""")
-    is_constant = models.BooleanField(default=False, help_text="If checked, return variable will be a constant with value of code field")
+    usage = models.SmallIntegerField(default=1, choices=USAGE)
     modules = models.CharField(max_length=255, blank=True, help_text="Extra modules to import, splited by ','")
-    namespace = models.CharField(max_length=255, blank=True, help_text="Extra namespace, use json string!")
-    code = models.TextField(blank=True, help_text="Code string to run or constant value")
+    namespace = models.CharField(max_length=255, blank=True, help_text="Extra namespace, use json like string!")
+    code = models.TextField(blank=True,)
+    return_variable = models.CharField(max_length=70, blank=True, null=True, unique=True, default=None,
+                                       help_text="""Leave blank or fill a unique variable name, then it can be referenced
+                  by ${variable} syntax!""")
 
     def __str__(self):
         return self.name
@@ -249,6 +245,51 @@ class Script(BaseModel):
         """
         if self.return_variable == "" or (self.return_variable is not None and self.return_variable.strip() == ""):
             self.return_variable = None
+
+    def evaluate(self):
+        """Evaluates the given code in Python and returns the results.
+
+        ``code`` is evaluated in Python as explained in `Evaluating
+        codes`.
+
+        ``modules`` argument can be used to specify a comma separated
+        list of Python modules to be imported and added to the evaluation
+        namespace.
+
+        ``namespace`` argument can be used to pass a custom evaluation
+        namespace as a dictionary. Possible ``modules`` are added to this
+        namespace. This is a new feature in Robot Framework 2.8.4.
+        """
+        if isinstance(self.code, str) and '$' in self.code:
+            self.code, variables = self._handle_variables_in_code()
+        else:
+            variables = {}
+        self.namespace = self._create_evaluation_namespace()
+        try:
+            if not isinstance(self.code, str):
+                raise TypeError("Code must be string, got %s."
+                                % self._type_name(self.code))
+            if not self.code:
+                raise ValueError("Code cannot be empty.")
+            return eval(self.code, self.namespace, variables)
+        except:
+            raise RuntimeError("Evaluating code '%s' failed"
+                               % self.code)
+
+    def _type_name(self, item):
+        cls = item.__class__ if hasattr(item, '__class__') else type(item)
+        named_types = {str: 'string', bool: 'boolean', int: 'integer',
+                       type(None): 'None', dict: 'dictionary', type: 'class'}
+        return named_types.get(cls, cls.__name__)
+
+    def _handle_variables_in_code(self):
+        pass
+
+    def _create_evaluation_namespace(self):
+        self.namespace = dict(self.namespace or {})
+        self.modules = self.modules.replace(' ', '').split(',') if self.modules else []
+        self.namespace.update((m, __import__(m)) for m in self.modules if m)
+        return self.namespace
 
     class Meta:
         verbose_name = 'Script'
@@ -278,11 +319,10 @@ class Case(BaseModel, RequestModel):
     template = models.ForeignKey(APITemplate, blank=True, null=True)
     tag = models.ManyToManyField(CaseTag, blank=True)
     # params,request_headers,data,setup,teardown支持参数化
-    # setup = models.TextField(blank=True, help_text='Python code to run before sending the request.')
-    # teardown = models.TextField(blank=True, help_text='Python code to run after request sent.')
-    #
-    # assertions = models.ManyToManyField(Assertion, blank=True)  # 逗号分隔的断言id
-    # generated_vars = models.ManyToManyField(Variable, blank=True, through_fields=)  # 关联生成的variable数据，执行后更新variable
+    setup = models.ManyToManyField(Script, blank=True, related_name="setup_set", limit_choices_to={"usage": 3}, help_text='Python code to run before sending the request.')
+    teardown = models.ManyToManyField(Script, blank=True, related_name="teardown_set", limit_choices_to={"usage": 4}, help_text='Python code to run after request sent.')
+    assertions = models.ManyToManyField(Script, blank=True, related_name="assertion_set", limit_choices_to={"usage": 2})  # 逗号分隔的断言id
+    generated_vars = models.ManyToManyField(Script, blank=True, related_name="var_set", limit_choices_to={"usage": 1})  # 关联生成的variable数据，执行后更新variable
     last_run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
 
     def __str__(self):

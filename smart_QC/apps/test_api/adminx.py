@@ -147,22 +147,12 @@ class CaseAdmin(object):
         # instance.save()
         return "<a title = 'Run this case' onclick='alert(%s)'>" \
                "<i class='fa fa-play-circle fa-lg'></i></a>" % instance.id
-
-    # def run_case(self, request, queryset):  # 批量运行action django admin自身的方法
-    #     queryset.update(last_run_status='1')  # 设置用例状态为执行中
-    #     # 调用异步任务，进行接口回放
-    #     # for obj in queryset:
-    #     #     print(obj.template)
-    #     #     from time import sleep
-    #     #     # sleep(5)
-
-    # run_case.short_description = "Run selected Case"
-    # run_case.icon = 'fa fa-play'
-
     actions = [RunCase, FailCase]
 
     style_fields = {'invoke_cases': 'm2m_transfer',
                     'tag': 'm2m_transfer',
+                    'setup': 'm2m_transfer',
+                    'teardown': 'm2m_transfer',
                     'assertions': 'm2m_transfer',
                     'generated_vars': 'm2m_transfer'
                     }
@@ -221,32 +211,6 @@ class CaseAdmin(object):
             #          ),
         )
     )
-        # Fieldset("Common Fields",
-        #          Row('name', 'last_run_status',),
-        #          Row('case_type', 'template',),
-        #          'invoke_cases',
-        #          # Row('protocol', 'host', 'path', ),
-        #          # horizontal=True,
-        #          ),
-        # Fieldset('Extend Fields',
-        #          TabHolder(
-        #              Tab('About case',
-        #                  'description', 'tag',
-        #                  ),
-        #              Tab('Pre Replay',
-        #                  'setup',
-        #                  ),
-        #              Tab('API detail',
-        #                  'method',
-        #                  Row('protocol', 'host', 'path', ),
-        #                  'request_headers', 'params', 'data',
-        #                  ),
-        #              Tab('Post Replay',
-        #                  'assertions', 'generated_vars', 'teardown',
-        #                  ),
-        #          ),
-        #          ),
-    # )
 
 
 class ReplayLogAdmin(object):
@@ -257,37 +221,18 @@ class ReplayLogAdmin(object):
 
 
 class ScriptAdmin(object):
-    # list_display = ('record_module', )
+    base_fields = ['name', 'language', 'usage', 'modules', 'namespace', 'code', 'return_variable', 'description',]
+    list_display = base_fields
+    list_editable = base_fields
+    search_fields = base_fields + ['create_time', 'modify_time',]
+    list_filter = base_fields + ['create_time', 'modify_time',]
     list_select_related = True
     model_icon = 'fa fa-edit'
     reversion_enable = True
-    # from multiselectfield import MultiSelectField
-    # from xadmin.plugins.multiselect import SelectMultipleDropdown
-    # formfield_overrides = {
-    #     MultiSelectField: {'widget': SelectMultipleDropdown},
-    # }
-    # from django.db import models
-    # from django.forms import Select
-    # from multiselectfield import MultiSelectField
-    # formfield_overrides = {
-    #     MultiSelectField: {'widget': Select},
-    # }
-    # style_fields = {'description': 'm2m_transfer',
-    #                 }
-
-
-# class VariableAdmin(object):
-#     # list_display = ('record_module', )
-#     list_select_related = True
-#     model_icon = 'fa fa-edit'
-#     reversion_enable = True
-#
-#
-# class AssertionAdmin(object):
-#     # list_display = ('record_module', )
-#     list_select_related = True
-#     model_icon = 'fa fa-check'
-#     reversion_enable = True
+    form_layout = (
+        Main(Fieldset('', Row('name', 'usage', 'language', ), Row('modules', 'namespace', ), 'return_variable', 'code',
+                      css_class='unsort short_label no_title')),
+        Side(Fieldset('', 'description', css_class='unsort short_label no_title')))
 
 xadmin.sites.site.register(TestHost, TestHostAdmin)
 xadmin.sites.site.register(TestEnvironment, TestEnvironmentAdmin)
@@ -297,5 +242,3 @@ xadmin.sites.site.register(Case, CaseAdmin)
 xadmin.sites.site.register(ReplayLog, ReplayLogAdmin)
 xadmin.sites.site.register(CaseTag, CaseTagAdmin)
 xadmin.sites.site.register(Script, ScriptAdmin)
-# xadmin.sites.site.register(Variable, VariableAdmin)
-# xadmin.sites.site.register(Assertion, AssertionAdmin)
