@@ -673,7 +673,7 @@ $.widget("ui.sortable", $.ui.mouse, {
 			queries = [[$.isFunction(this.options.items) ? this.options.items.call(this.element[0], event, { item: this.currentItem }) : $(this.options.items, this.element), this]],
 			connectWith = this._connectWith();
 
-		if(connectWith && this.ready) { //Shouldn't be run the first time through due to massive slow-down
+		if(connectWith && this.ready) { //Shouldn't be running the first time through due to massive slow-down
 			for (i = connectWith.length - 1; i >= 0; i--){
 				cur = $(connectWith[i]);
 				for (j = cur.length - 1; j >= 0; j--){

@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '_4&g1d#@6w#zug*3-gw6emi!b5@b0my&+ovo4s$#g^zfq*g($x'
 
-# SECURITY WARNING: don't run with debug turned on in production!
+# SECURITY WARNING: don't running with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
@@ -229,5 +229,7 @@ CELERY_TIMEZONE = TIME_ZONE
 # CELERY_ALWAYS_EAGER = True
 CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 
+# eval safe
+EVAL_SAFE_MODULES = ['random', 'time', 'date', 'datetime']
 # 针对不同环境引入不同的配置
 # from  settings_for_envs.dev import *

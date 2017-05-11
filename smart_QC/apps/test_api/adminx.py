@@ -6,7 +6,7 @@ import xadmin
 from xadmin import views
 # from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Variable, Assertion
 from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Script
-from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Col, AppendedText, Side
+from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Side, PrependedAppendedText
 from xadmin.plugins.inline import Inline
 # from xadmin.plugins.batch import BatchChangeAction
 from actions import RunCase, FailCase
@@ -31,7 +31,7 @@ class TestEnvironmentAdmin(object):
     list_display_links = ('name',)
     search_fields = ['name', 'hosts', 'description', 'default_host', ]
     # style_fields = {'hosts': 'checkbox-inline'}
-    style_fields = {'hosts': 'm2m_transfer'}
+    style_fields = {'hosts': 'm2m_transfer_with_help_text'}
     model_icon = 'fa fa-cloud'
     list_editable = ('name', 'hosts', 'description', )
     list_select_related = True
@@ -113,7 +113,6 @@ class APITemplateAdmin(object):
                      'create_time', 'modify_time', )
     list_filter = ['id', 'name', 'status_code', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',
                    'data', 'api_md5', 'create_time', 'modify_time', ]
-                   # ('service_type', xadmin.filters.MultiSelectFieldListFilter)]
 
     list_bookmarks = []
     form_layout = (
@@ -150,11 +149,9 @@ class CaseAdmin(object):
     actions = [RunCase, FailCase]
 
     style_fields = {'invoke_cases': 'm2m_transfer',
-                    'tag': 'm2m_transfer',
-                    'setup': 'm2m_transfer',
-                    'teardown': 'm2m_transfer',
-                    'assertions': 'm2m_transfer',
-                    'generated_vars': 'm2m_transfer'
+                    'tag': 'm2m_dropdown_with_help_text',
+                    'setup': 'm2m_transfer_with_help_text',
+                    'teardown': 'm2m_transfer_with_help_text',
                     }
     list_display_options.short_description = "options"
     list_display_options.allow_tags = True
@@ -165,8 +162,8 @@ class CaseAdmin(object):
     reversion_enable = True
     list_editable = ('name', 'case_type', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',  'data',)
     refresh_times = (3, 5)
-    list_display = ('id', 'name', 'case_type', 'invoke_cases', 'tag', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',
-                    'data', 'last_run_status', 'list_display_options',)
+    list_display = ('id', 'name', 'case_type', 'tag', 'method', 'protocol', 'host', 'path',
+                    'last_run_status', 'list_display_options',)
     list_display_links = ('name',)
     readonly_fields = ('last_run_status',)
     search_fields = ('id', 'name', 'case_type', 'invoke_cases', 'tag', 'method', 'protocol', 'host', 'path',
@@ -200,7 +197,7 @@ class CaseAdmin(object):
                              'path', 'request_headers', 'params', 'data',
                              ),
                          Tab('Post Replay',
-                             'assertions', 'generated_vars', 'teardown',
+                             'teardown',
                              ),
                      ),
                      ),
@@ -221,7 +218,7 @@ class ReplayLogAdmin(object):
 
 
 class ScriptAdmin(object):
-    base_fields = ['name', 'language', 'usage', 'modules', 'namespace', 'code', 'return_variable', 'description',]
+    base_fields = ['name','variable', 'global_scope', 'modules', 'namespace', 'expression', 'description', 'default_teardown_script', ]
     list_display = base_fields
     list_editable = base_fields
     search_fields = base_fields + ['create_time', 'modify_time',]
@@ -230,7 +227,7 @@ class ScriptAdmin(object):
     model_icon = 'fa fa-edit'
     reversion_enable = True
     form_layout = (
-        Main(Fieldset('', Row('name', 'usage', 'language', ), Row('modules', 'namespace', ), 'return_variable', 'code',
+        Main(Fieldset('', Row('name', 'default_teardown_script'), Row(PrependedAppendedText('variable', '${', '}'), 'global_scope'), Row('modules', 'namespace', ), 'expression',
                       css_class='unsort short_label no_title')),
         Side(Fieldset('', 'description', css_class='unsort short_label no_title')))
 

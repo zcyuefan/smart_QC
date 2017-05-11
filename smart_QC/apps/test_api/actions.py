@@ -57,7 +57,7 @@ class RunCase(BaseActionView):
                     if int(selected_environment.get('id')) and isinstance(selected_case, list):
                         run_case(test_environment=selected_environment, case=selected_case)
                         # run_case.delay(test_environment=selected_environment, case=selected_case)
-                        self.message_user(_("Successfully add the task to run the %(count)d %(items)s.") % {
+                        self.message_user(_("Successfully add the task to running the %(count)d %(items)s.") % {
                             "count": n, "items": "case"
                         }, 'success')
                     else:
@@ -105,7 +105,7 @@ class RunCase(BaseActionView):
         # if perms_needed or protected:
         #     title = _("Cannot delete %(name)s") % {"name": objects_name}
         # else:
-        title = _("Ready to run the selected cases?")
+        title = _("Ready to running the selected cases?")
 
         test_environments = TestEnvironment.objects.all()
 

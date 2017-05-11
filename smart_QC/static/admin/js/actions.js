@@ -113,7 +113,7 @@
         });
         $('form#changelist-form button[name="index"]').click(function(event) {
             if (list_editable_changed) {
-                return confirm(gettext("You have unsaved changes on individual editable fields. If you run an action, your unsaved changes will be lost."));
+                return confirm(gettext("You have unsaved changes on individual editable fields. If you running an action, your unsaved changes will be lost."));
             }
         });
         $('form#changelist-form input[name="_save"]').click(function(event) {
@@ -125,7 +125,7 @@
             });
             if (action_changed) {
                 if (list_editable_changed) {
-                    return confirm(gettext("You have selected an action, but you haven't saved your changes to individual fields yet. Please click OK to save. You'll need to re-run the action."));
+                    return confirm(gettext("You have selected an action, but you haven't saved your changes to individual fields yet. Please click OK to save. You'll need to re-running the action."));
                 } else {
                     return confirm(gettext("You have selected an action, and you haven't made any changes on individual fields. You're probably looking for the Go button rather than the Save button."));
                 }

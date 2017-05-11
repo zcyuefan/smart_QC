@@ -409,7 +409,7 @@ XRegExp = XRegExp || (function (undef) {
 
 /**
  * Extends or changes XRegExp syntax and allows custom flags. This is used internally and can be
- * used to create XRegExp addons. `XRegExp.install('extensibility')` must be run before calling
+ * used to create XRegExp addons. `XRegExp.install('extensibility')` must be running before calling
  * this function, or an error is thrown. If more than one token can match the same string, the last
  * added wins.
  * @memberOf XRegExp

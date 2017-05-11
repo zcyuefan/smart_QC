@@ -34,7 +34,8 @@ def AbstractClassWithoutFieldsNamed(cls, *excl):
     else:
         raise Exception("Not an abstract model")
 
-
+import django
+django.setup()
 class BaseModel(models.Model):
     name = models.CharField(max_length=40, unique=True)
     description = models.TextField(max_length=255, blank=True)

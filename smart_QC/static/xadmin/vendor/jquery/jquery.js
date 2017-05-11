@@ -760,7 +760,7 @@ jQuery.extend({
 			}
 
 			if ( bulk ) {
-				// Bulk operations run against the entire set
+				// Bulk operations running against the entire set
 				if ( raw ) {
 					fn.call( elems, value );
 					fn = null;
@@ -2243,7 +2243,7 @@ function tokenize( selector, parseOnly ) {
 
 	while ( soFar ) {
 
-		// Comma and first run
+		// Comma and first running
 		if ( !matched || (match = rcomma.exec( soFar )) ) {
 			if ( match ) {
 				// Don't consume trailing commas as valid
@@ -6470,7 +6470,7 @@ jQuery.each([ "height", "width" ], function( i, name ) {
 });
 
 // These hooks cannot be added until DOM ready because the support test
-// for it is not run until after DOM ready
+// for it is not running until after DOM ready
 jQuery(function() {
 	// Support: Android 2.3
 	if ( !jQuery.support.reliableMarginRight ) {
@@ -7830,7 +7830,7 @@ var fxNow, timerId,
 		}]
 	};
 
-// Animations created synchronously will run synchronously
+// Animations created synchronously will running synchronously
 function createFxNow() {
 	setTimeout(function() {
 		fxNow = undefined;
@@ -7904,7 +7904,7 @@ function Animation( elem, properties, options ) {
 			},
 			stop: function( gotoEnd ) {
 				var index = 0,
-					// if we are going to the end, we want to run all the tweens
+					// if we are going to the end, we want to running all the tweens
 					// otherwise we skip this part
 					length = gotoEnd ? animation.tweens.length : 0;
 				if ( stopped ) {

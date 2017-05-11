@@ -2025,7 +2025,7 @@ tokenize = Sizzle.tokenize = function( selector, parseOnly ) {
 
 	while ( soFar ) {
 
-		// Comma and first run
+		// Comma and first running
 		if ( !matched || (match = rcomma.exec( soFar )) ) {
 			if ( match ) {
 				// Don't consume trailing commas as valid
@@ -2757,7 +2757,7 @@ var rootjQuery,
 				if ( match[1] ) {
 					context = context instanceof jQuery ? context[0] : context;
 
-					// Option to run scripts is true for back-compat
+					// Option to running scripts is true for back-compat
 					// Intentionally let the error be thrown if parseHTML is not present
 					jQuery.merge( this, jQuery.parseHTML(
 						match[1],
@@ -3486,7 +3486,7 @@ var access = jQuery.access = function( elems, fn, key, value, chainable, emptyGe
 		}
 
 		if ( bulk ) {
-			// Bulk operations run against the entire set
+			// Bulk operations running against the entire set
 			if ( raw ) {
 				fn.call( elems, value );
 				fn = null;
@@ -5427,7 +5427,7 @@ jQuery.fn.extend({
 							!data_priv.access( node, "globalEval" ) && jQuery.contains( doc, node ) ) {
 
 							if ( node.src ) {
-								// Optional AJAX dependency, but won't run scripts if not present
+								// Optional AJAX dependency, but won't running scripts if not present
 								if ( jQuery._evalUrl ) {
 									jQuery._evalUrl( node.src );
 								}
@@ -5599,7 +5599,7 @@ function curCSS( elem, name, computed ) {
 
 
 function addGetHookIf( conditionFn, hookFn ) {
-	// Define the hook, we'll check on the first run if it's really needed.
+	// Define the hook, we'll check on the first running if it's really needed.
 	return {
 		get: function() {
 			if ( conditionFn() ) {
@@ -6322,7 +6322,7 @@ var
 		} ]
 	};
 
-// Animations created synchronously will run synchronously
+// Animations created synchronously will running synchronously
 function createFxNow() {
 	setTimeout(function() {
 		fxNow = undefined;
@@ -6587,7 +6587,7 @@ function Animation( elem, properties, options ) {
 			},
 			stop: function( gotoEnd ) {
 				var index = 0,
-					// If we are going to the end, we want to run all the tweens
+					// If we are going to the end, we want to running all the tweens
 					// otherwise we skip this part
 					length = gotoEnd ? animation.tweens.length : 0;
 				if ( stopped ) {

@@ -7,7 +7,8 @@ from models import IDC, Host, MaintainLog, HostGroup, AccessRecord
 from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Col, AppendedText, Side
 from xadmin.plugins.inline import Inline
 from xadmin.plugins.batch import BatchChangeAction
-
+from xadmin.plugins.multiselect import M2MSelectPlugin, ModelFormAdminView, ManyToManyField, SelectMultipleTransfer, \
+    SelectMultipleDropdown
 
 #  菜单还需要设置
 # rtm（需求跟踪）：版本管理，原始需求，需求分解，测试要点，代码地图
@@ -55,6 +56,25 @@ class GlobalSetting(object):
 
 
 xadmin.sites.site.register(views.CommAdminView, GlobalSetting)
+
+
+class M2MSelectPluginWithHelpText(M2MSelectPlugin):
+    def init_request(self, *args, **kwargs):
+        return hasattr(self.admin_view, 'style_fields') and \
+            (
+                'm2m_transfer_with_help_text' in self.admin_view.style_fields.values() or
+                'm2m_dropdown_with_help_text' in self.admin_view.style_fields.values()
+            )
+
+    def get_field_style(self, attrs, db_field, style, **kwargs):
+        help_text = db_field.help_text if db_field.help_text else ""
+        if style == 'm2m_transfer_with_help_text' and isinstance(db_field, ManyToManyField):
+            return {'widget': SelectMultipleTransfer(db_field.verbose_name, False), 'help_text': help_text}
+        if style == 'm2m_dropdown_with_help_text' and isinstance(db_field, ManyToManyField):
+            return {'widget': SelectMultipleDropdown, 'help_text': help_text}
+        return attrs
+
+xadmin.site.register_plugin(M2MSelectPluginWithHelpText, ModelFormAdminView)
 
 
 class MaintainInline(object):

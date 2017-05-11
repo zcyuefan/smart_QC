@@ -2,9 +2,10 @@
 from __future__ import unicode_literals
 
 from django.db import models
-from django import forms
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from smart_QC.libs.json_field import JSONField
-from smart_QC.libs.model_tools import BaseModel, AbstractClassWithoutFieldsNamed as without
+import ast
 from django.utils.translation import ugettext_lazy as _
 
 # Create your models here.
@@ -75,6 +76,16 @@ STATUS_CODES = (
     ('510', '510 Not Extended'),
     ('600', '600 Unparseable Response Headers'),
 )
+
+
+class BaseModel(models.Model):
+    name = models.CharField(max_length=40, unique=True)
+    description = models.TextField(max_length=255, blank=True)
+    create_time = models.DateTimeField(auto_now_add=True)
+    modify_time = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
 
 
 class RequestModel(models.Model):
@@ -189,52 +200,23 @@ RUN_STATUS = (
     (3, 'SUCCESS'),
 )
 
-# class Variable(BaseModel):
-#     """
-#     参数化数据模型，借鉴RobotFramework参数化的方法，定义${},@{},&{}三种值类型的参数，借鉴evaluate关键字（eval方法）运行生成
-#     动态参数值，借鉴rf的find_var方法找到参数，并写一个装饰器处理用例运行过程中所有环节的参数化
-#     """
-#     VAR_TYPE = (
-#         (1, 'Static'),
-#         (2, 'Evaluate'),
-#     )
-#     var_type = models.SmallIntegerField(default=1, choices=VAR_TYPE)  # var_type=1,表示直接取静态值
-#     expression = models.TextField()  # var_type=1时存入静态值，2时存入表达式
-#     modules = models.CharField(max_length=100, blank=True)
-#     namespace = models.CharField(max_length=20, blank=True)
-#
-#     def __str__(self):
-#         return self.name
-#
-#     class Meta:
-#         verbose_name = 'Variable'
-#         verbose_name_plural = verbose_name + 's'
-
-LANGUAGES = (
-    ('python', 'python'),
-)
-
-USAGE = (
-    (1, 'Variable'),
-    (2, 'Assertion'),
-    (3, 'Setup'),
-    (4, 'Teardown'),
-    (5, 'Other'),
-)
-
 
 class Script(BaseModel):
     """
 
     """
-    language = models.CharField(default="python", max_length=60, choices=LANGUAGES)
-    usage = models.SmallIntegerField(default=1, choices=USAGE)
-    modules = models.CharField(max_length=255, blank=True, help_text="Extra modules to import, splited by ','")
-    namespace = models.CharField(max_length=255, blank=True, help_text="Extra namespace, use json like string!")
-    code = models.TextField(blank=True,)
-    return_variable = models.CharField(max_length=70, blank=True, null=True, unique=True, default=None,
-                                       help_text="""Leave blank or fill a unique variable name, then it can be referenced
-                  by ${variable} syntax!""")
+    default_teardown_script = models.BooleanField(default=False,
+                                                  help_text="Default running script, e.g. assertion 200 response status"
+                                                  )
+    variable = models.CharField(max_length=70, blank=True, null=True, unique=True, default=None,
+                                help_text="""Variable name to save result returned by
+                                        expression evaluation. Syntax: ${variable}""")
+    global_scope = models.BooleanField(default=False, help_text="Available to referenced by other case.")
+    modules = models.CharField(max_length=255, blank=True, help_text="""Used to specify a comma separated list of
+    Python modules to be imported and added to the evaluation namespace.""")
+    namespace = models.CharField(max_length=255, blank=True, default='{}', help_text="""Used to pass a custom evaluation namespace
+    as a dictionary. Possible ``modules`` are added to this namespace.Syntax: ${variable.namespace}""")
+    expression = models.TextField(blank=True, help_text="Expression in Python to be evaluated.")
 
     def __str__(self):
         return self.name
@@ -243,8 +225,35 @@ class Script(BaseModel):
         """
         Clean up blank fields to null
         """
-        if self.return_variable == "" or (self.return_variable is not None and self.return_variable.strip() == ""):
-            self.return_variable = None
+        if self.variable == "" or (self.variable is not None and self.variable.strip() == ""):
+            self.variable = None
+        safe_modules = settings.EVAL_SAFE_MODULES
+        if isinstance(self.modules, unicode):
+            input_modules = self.modules.replace(' ', '').split(',') if self.modules else []
+        else:
+            raise ValidationError('modules is not string')
+        if isinstance(self.namespace, unicode):
+            try:
+                ast.literal_eval(self.namespace)
+            except Exception as e:
+                raise ValidationError('Namespace SyntaxError: ' + str(e))
+        else:
+            raise ValidationError('namespace is not string')
+        unsafe_modules = list(set(input_modules).difference(set(safe_modules)))
+        if unsafe_modules:
+            raise ValidationError('Unsafe module(s): %s' % ','.join(unsafe_modules))
+        #
+        ns = ast.literal_eval(self.namespace)
+        a={"ee":2222,"gg":33}
+        ns.update((m, __import__(m)) for m in input_modules if m)
+        print(ns)
+        ns.update(a)
+        print(ns)
+        from asteval import Interpreter
+        aeval = Interpreter()
+        aeval.symtable.update(ns)
+        b=aeval('random.randint(1,ee)')
+        print(b)
 
     def evaluate(self):
         """Evaluates the given code in Python and returns the results.
@@ -260,10 +269,11 @@ class Script(BaseModel):
         namespace as a dictionary. Possible ``modules`` are added to this
         namespace. This is a new feature in Robot Framework 2.8.4.
         """
-        if isinstance(self.code, str) and '$' in self.code:
-            self.code, variables = self._handle_variables_in_code()
-        else:
-            variables = {}
+        # if isinstance(self.code, str) and '$' in self.code:
+        #     self.code, variables = handle_variables_in_expression(self.code)
+        # else:
+        #     variables = {}
+        self.code, variables = handle_variables_in_expression(self.code)
         self.namespace = self._create_evaluation_namespace()
         try:
             if not isinstance(self.code, str):
@@ -296,33 +306,32 @@ class Script(BaseModel):
         verbose_name_plural = verbose_name + 's'
 
 
-# class Assertion(BaseModel):
-#     """
-#     断言数据模型
-#     """
-#     is_default = models.BooleanField(default=False)  # True表示在用例没有关联断言时，运行默认断言
-#
-#     def __str__(self):
-#         return self.name
-#
-#     class Meta:
-#         verbose_name = 'Assertion'
-#         verbose_name_plural = verbose_name + 's'
+def handle_variables_in_expression(expression):
+    if isinstance(expression, str) and '$' in expression:
+        expression, variables = handle_variables_in_expression(expression)
+    else:
+        variables = {}
+    return expression, variables
 
 
 class Case(BaseModel, RequestModel):
     """
     接口用例数据模型
     """
+    #
+    #
+    # def default_script():
+    #     return Script.objects.filter(is_default=True)
     case_type = models.SmallIntegerField(default=0, choices=CASE_TYPE)
     invoke_cases = models.ManyToManyField('self', symmetrical=False, blank=True)
     template = models.ForeignKey(APITemplate, blank=True, null=True)
     tag = models.ManyToManyField(CaseTag, blank=True)
     # params,request_headers,data,setup,teardown支持参数化
-    setup = models.ManyToManyField(Script, blank=True, related_name="setup_set", limit_choices_to={"usage": 3}, help_text='Python code to run before sending the request.')
-    teardown = models.ManyToManyField(Script, blank=True, related_name="teardown_set", limit_choices_to={"usage": 4}, help_text='Python code to run after request sent.')
-    assertions = models.ManyToManyField(Script, blank=True, related_name="assertion_set", limit_choices_to={"usage": 2})  # 逗号分隔的断言id
-    generated_vars = models.ManyToManyField(Script, blank=True, related_name="var_set", limit_choices_to={"usage": 1})  # 关联生成的variable数据，执行后更新variable
+    setup = models.ManyToManyField(Script, blank=True, related_name="setup_set",
+                                   help_text='Scripts running before sending the request, e.g. set variable, prepare test environment.')
+    teardown = models.ManyToManyField(Script, blank=True, related_name="teardown_set",
+                                      default=Script.objects.filter(default_teardown_script=True),
+                                      help_text='Scripts running after request sent, e.g. set global variable, asserting, clear test environment')
     last_run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
 
     def __str__(self):

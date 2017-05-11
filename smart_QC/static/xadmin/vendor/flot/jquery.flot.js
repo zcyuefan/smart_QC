@@ -1090,7 +1090,7 @@ Licensed under the MIT license.
                 }
             }
 
-            // give the hooks a chance to run
+            // give the hooks a chance to running
             for (i = 0; i < series.length; ++i) {
                 s = series[i];
 
