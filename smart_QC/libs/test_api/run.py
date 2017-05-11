@@ -11,7 +11,7 @@
 """
 from __future__ import unicode_literals
 from smart_QC.apps.test_api.models import TestHost, Case
-from parse import AllCaseParse, CaseParse
+# from parse import AllCaseParse, CaseParse
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 

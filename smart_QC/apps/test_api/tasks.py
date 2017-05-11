@@ -11,7 +11,7 @@ celery异步任务
 """
 from __future__ import unicode_literals
 from celery import shared_task
-from smart_QC.libs.test_api.running import Runner
+from smart_QC.libs.test_api import Runner
 
 @shared_task
 def run_case(test_environment, case):
