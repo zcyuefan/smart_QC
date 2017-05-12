@@ -6,12 +6,11 @@ import xadmin
 from xadmin import views
 # from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Variable, Assertion
 from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Script
+from forms import CaseForm
 from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Side, PrependedAppendedText
 from xadmin.plugins.inline import Inline
 # from xadmin.plugins.batch import BatchChangeAction
 from actions import RunCase, FailCase
-# from tasks import add
-# add.delay(2, 2)
 
 
 class TestHostAdmin(object):
@@ -141,6 +140,8 @@ class ReplayInline(object):
 
 
 class CaseAdmin(object):
+    exclude = []
+    form = CaseForm
     def list_display_options(self, instance):  # display list option
         # instance.last_run_status = '1'
         # instance.save()
@@ -162,7 +163,7 @@ class CaseAdmin(object):
     reversion_enable = True
     list_editable = ('name', 'case_type', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',  'data',)
     refresh_times = (3, 5)
-    list_display = ('id', 'name', 'case_type', 'tag', 'method', 'protocol', 'host', 'path',
+    list_display = ('id','teardown2', 'name', 'case_type', 'tag', 'method', 'protocol', 'host', 'path',
                     'last_run_status', 'list_display_options',)
     list_display_links = ('name',)
     readonly_fields = ('last_run_status',)

@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from smart_QC.libs.json_field import JSONField
 import ast
+# from django.http import request
 from django.utils.translation import ugettext_lazy as _
 
 # Create your models here.
@@ -324,23 +325,50 @@ class Case(BaseModel, RequestModel):
     #     return Script.objects.filter(is_default=True)
     case_type = models.SmallIntegerField(default=0, choices=CASE_TYPE)
     invoke_cases = models.ManyToManyField('self', symmetrical=False, blank=True)
+    invoke_cases_order = models.CommaSeparatedIntegerField(blank=True, max_length=255)
     template = models.ForeignKey(APITemplate, blank=True, null=True)
     tag = models.ManyToManyField(CaseTag, blank=True)
     # params,request_headers,data,setup,teardown支持参数化
     setup = models.ManyToManyField(Script, blank=True, related_name="setup_set",
                                    help_text='Scripts running before sending the request, e.g. set variable, prepare test environment.')
+    setup_order = models.CommaSeparatedIntegerField(blank=True, max_length=255)
     teardown = models.ManyToManyField(Script, blank=True, related_name="teardown_set",
                                       default=Script.objects.filter(default_teardown_script=True),
                                       help_text='Scripts running after request sent, e.g. set global variable, asserting, clear test environment')
+    teardown_order = models.CommaSeparatedIntegerField(blank=True, max_length=255)
+    # teardown = models.ManyToManyField(Script, through='CaseTeardownScript', blank=True,
+    #                                   default=Script.objects.filter(default_teardown_script=True),
+    #                                   help_text='Scripts running after request sent, e.g. set global variable, asserting, clear test environment')
     last_run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
+
 
     def __str__(self):
         return self.name
+
+
+    # def clean(self):
+    #     """Make sure all managers are also members."""
+        # setup = list(self.cleaned_data['setup'])
+        # self.clean_fields()
+        # print(self.cleaned_data)
+        # for manager in self.cleaned_data['managers']:
+        #     if manager not in members:
+        #         members.append(manager)
+        # self.cleaned_data['members'] = members
+        # return self.cleaned_data
+
 
     class Meta:
         verbose_name = 'Case'
         verbose_name_plural = verbose_name + 's'
 
+# from django.db.models.signals import post_save, pre_delete, m2m_changed
+#
+# def handle_flow(sender, instance, *args, **kwargs):
+#     print(Case.setup.count())
+#     print("Signal catched !")
+#
+# m2m_changed.connect(handle_flow, sender=Case.setup.through)
 
 Case._meta.get_field('method').blank = True
 Case._meta.get_field('protocol').blank = True
