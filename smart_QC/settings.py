@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'djcelery',
     # 'kombu.transport.django',  # 基于Django的broker
     'smart_QC.apps.task',
+    'sortedm2m',
 ]
 
 MIDDLEWARE_CLASSES = [

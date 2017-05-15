@@ -7,8 +7,11 @@ from models import IDC, Host, MaintainLog, HostGroup, AccessRecord
 from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Col, AppendedText, Side
 from xadmin.plugins.inline import Inline
 from xadmin.plugins.batch import BatchChangeAction
-from xadmin.plugins.multiselect import M2MSelectPlugin, ModelFormAdminView, ManyToManyField, SelectMultipleTransfer, \
+from xadmin.plugins.multiselect import M2MSelectPlugin, ManyToManyField, SelectMultipleTransfer, \
     SelectMultipleDropdown
+from xadmin.views import BaseAdminPlugin, ModelFormAdminView
+from sortedm2m.fields import SortedManyToManyField
+from sortedm2m.forms import SortedCheckboxSelectMultiple
 
 #  菜单还需要设置
 # rtm（需求跟踪）：版本管理，原始需求，需求分解，测试要点，代码地图
@@ -63,7 +66,8 @@ class M2MSelectPluginWithHelpText(M2MSelectPlugin):
         return hasattr(self.admin_view, 'style_fields') and \
             (
                 'm2m_transfer_with_help_text' in self.admin_view.style_fields.values() or
-                'm2m_dropdown_with_help_text' in self.admin_view.style_fields.values()
+                'm2m_dropdown_with_help_text' in self.admin_view.style_fields.values() or
+                'sorted_m2m' in self.admin_view.style_fields.values()
             )
 
     def get_field_style(self, attrs, db_field, style, **kwargs):
@@ -72,6 +76,8 @@ class M2MSelectPluginWithHelpText(M2MSelectPlugin):
             return {'widget': SelectMultipleTransfer(db_field.verbose_name, False), 'help_text': help_text}
         if style == 'm2m_dropdown_with_help_text' and isinstance(db_field, ManyToManyField):
             return {'widget': SelectMultipleDropdown, 'help_text': help_text}
+        if style == 'sorted_m2m' and isinstance(db_field, SortedManyToManyField):
+            return {'widget': SortedCheckboxSelectMultiple, 'help_text': help_text}
         return attrs
 
 xadmin.site.register_plugin(M2MSelectPluginWithHelpText, ModelFormAdminView)

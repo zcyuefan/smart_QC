@@ -6,7 +6,7 @@ import xadmin
 from xadmin import views
 # from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Variable, Assertion
 from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Script
-from forms import CaseForm
+from forms import CaseAdminForm
 from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Side, PrependedAppendedText
 from xadmin.plugins.inline import Inline
 # from xadmin.plugins.batch import BatchChangeAction
@@ -141,7 +141,7 @@ class ReplayInline(object):
 
 class CaseAdmin(object):
     exclude = []
-    form = CaseForm
+    form = CaseAdminForm
     def list_display_options(self, instance):  # display list option
         # instance.last_run_status = '1'
         # instance.save()
@@ -149,10 +149,12 @@ class CaseAdmin(object):
                "<i class='fa fa-play-circle fa-lg'></i></a>" % instance.id
     actions = [RunCase, FailCase]
 
-    style_fields = {'invoke_cases': 'm2m_transfer',
+    style_fields = {'invoke_cases': 'sorted_m2m',
                     'tag': 'm2m_dropdown_with_help_text',
-                    'setup': 'm2m_transfer_with_help_text',
-                    'teardown': 'm2m_transfer_with_help_text',
+                    'setup': 'sorted_m2m',
+                    'teardown': 'sorted_m2m',
+                    # 'teardown': 'm2m_transfer_with_help_text',
+                    # 'teardown': 'm2m_dropdown_with_help_text',
                     }
     list_display_options.short_description = "options"
     list_display_options.allow_tags = True
@@ -163,7 +165,7 @@ class CaseAdmin(object):
     reversion_enable = True
     list_editable = ('name', 'case_type', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',  'data',)
     refresh_times = (3, 5)
-    list_display = ('id','teardown2', 'name', 'case_type', 'tag', 'method', 'protocol', 'host', 'path',
+    list_display = ('id', 'name', 'case_type', 'invoke_cases', 'tag', 'method', 'protocol', 'host', 'path',
                     'last_run_status', 'list_display_options',)
     list_display_links = ('name',)
     readonly_fields = ('last_run_status',)
@@ -198,7 +200,7 @@ class CaseAdmin(object):
                              'path', 'request_headers', 'params', 'data',
                              ),
                          Tab('Post Replay',
-                             'teardown',
+                             'teardown'
                              ),
                      ),
                      ),

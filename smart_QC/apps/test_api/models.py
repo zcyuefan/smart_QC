@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from smart_QC.libs.json_field import JSONField
 import ast
-# from django.http import request
+from sortedm2m.fields import SortedManyToManyField
 from django.utils.translation import ugettext_lazy as _
 
 # Create your models here.
@@ -322,25 +322,33 @@ class Case(BaseModel, RequestModel):
     #
     #
     # def default_script():
-    #     return Script.objects.filter(is_default=True)
+    #     return Script.objects.filter(default_teardown_script=True)
+
     case_type = models.SmallIntegerField(default=0, choices=CASE_TYPE)
-    invoke_cases = models.ManyToManyField('self', symmetrical=False, blank=True)
-    invoke_cases_order = models.CommaSeparatedIntegerField(blank=True, max_length=255)
+    invoke_cases = SortedManyToManyField('self', symmetrical=False, blank=True)
     template = models.ForeignKey(APITemplate, blank=True, null=True)
     tag = models.ManyToManyField(CaseTag, blank=True)
     # params,request_headers,data,setup,teardown支持参数化
-    setup = models.ManyToManyField(Script, blank=True, related_name="setup_set",
-                                   help_text='Scripts running before sending the request, e.g. set variable, prepare test environment.')
-    setup_order = models.CommaSeparatedIntegerField(blank=True, max_length=255)
-    teardown = models.ManyToManyField(Script, blank=True, related_name="teardown_set",
-                                      default=Script.objects.filter(default_teardown_script=True),
-                                      help_text='Scripts running after request sent, e.g. set global variable, asserting, clear test environment')
-    teardown_order = models.CommaSeparatedIntegerField(blank=True, max_length=255)
-    # teardown = models.ManyToManyField(Script, through='CaseTeardownScript', blank=True,
+    setup = SortedManyToManyField(Script, blank=True, related_name="setup_set",
+                                  help_text='Scripts running before sending the request, e.g. set variable, prepare test environment.')
+    teardown = SortedManyToManyField(Script, blank=True, related_name="teardown_set",
+                                     # default=default_script,
+                                     help_text='Scripts running after request sent, e.g. set global variable, asserting, clear test environment')
+    # setup = models.ManyToManyField(Script, blank=True, related_name="setup_set",
+    #                                help_text='Scripts running before sending the request, e.g. set variable, prepare test environment.')
+    # teardown = models.ManyToManyField(Script, blank=True, related_name="teardown_set",
+    #                                   default=Script.objects.filter(default_teardown_script=True),
+    #                                   help_text='Scripts running after request sent, e.g. set global variable, asserting, clear test environment')
+    # # teardown = models.ManyToManyField(Script, through='CaseTeardownScript', blank=True,
     #                                   default=Script.objects.filter(default_teardown_script=True),
     #                                   help_text='Scripts running after request sent, e.g. set global variable, asserting, clear test environment')
     last_run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
 
+    # def __init__(self, *args, **kwargs):
+    #     super(Case, self).__init__(*args, **kwargs)
+    #     if not self.id:
+    #         # self.teardown = Script.objects.filter(default_teardown_script=True)
+    #         print(Script.objects.filter(default_teardown_script=True))
 
     def __str__(self):
         return self.name
@@ -375,6 +383,24 @@ Case._meta.get_field('protocol').blank = True
 Case._meta.get_field('host').blank = True
 Case._meta.get_field('host').null = True
 Case._meta.get_field('path').blank = True
+
+
+class CaseTeardownScript(models.Model):
+    case = models.ForeignKey(Case, on_delete=models.CASCADE)
+    script = models.ForeignKey(Script, on_delete=models.CASCADE)
+    rank = models.PositiveIntegerField()
+    #
+    # class Meta:
+    #     ordering = ('number',)
+
+
+class CaseSetupScript(models.Model):
+    case = models.ForeignKey(Case, on_delete=models.CASCADE)
+    script = models.ForeignKey(Script, on_delete=models.CASCADE)
+    rank = models.PositiveIntegerField()
+    #
+    # class Meta:
+    #     ordering = ('number',)
 
 
 class ReplayLog(models.Model):
