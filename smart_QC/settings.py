@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     # 'kombu.transport.django',  # 基于Django的broker
     'smart_QC.apps.task',
     'sortedm2m',
+    'multiselectfield',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -231,6 +232,12 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 
 # eval safe
-EVAL_SAFE_MODULES = ['random', 'time', 'date', 'datetime']
+EVAL_SAFE_MODULES = (
+    ('random', 'random'),
+    ('time', 'time'),
+    ('date', 'date'),
+    ('datetime', 'datetime'),
+)
+    # ['random', 'time', 'date', 'datetime']
 # 针对不同环境引入不同的配置
 # from  settings_for_envs.dev import *

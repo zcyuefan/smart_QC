@@ -6,7 +6,7 @@ import xadmin
 from xadmin import views
 # from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Variable, Assertion
 from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Script
-from forms import CaseAdminForm
+from .forms import CaseAdminForm, ScriptAdminForm
 from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Side, PrependedAppendedText
 from xadmin.plugins.inline import Inline
 # from xadmin.plugins.batch import BatchChangeAction
@@ -140,8 +140,8 @@ class ReplayInline(object):
 
 
 class CaseAdmin(object):
-    exclude = []
-    form = CaseAdminForm
+    # exclude = []
+    # form = CaseAdminForm
     def list_display_options(self, instance):  # display list option
         # instance.last_run_status = '1'
         # instance.save()
@@ -221,6 +221,7 @@ class ReplayLogAdmin(object):
 
 
 class ScriptAdmin(object):
+    form = ScriptAdminForm
     base_fields = ['name','variable', 'global_scope', 'modules', 'namespace', 'expression', 'description', 'default_teardown_script', ]
     list_display = base_fields
     list_editable = base_fields

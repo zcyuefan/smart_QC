@@ -12,6 +12,7 @@ file doc
 from __future__ import unicode_literals
 from django import forms
 from .models import Case, Script
+from xadmin.plugins.multiselect import SelectMultipleDropdown
 
 
 # Generates a function that sequentially calls the two functions that were
@@ -33,12 +34,23 @@ from .models import Case, Script
 #     widget = OrderedManyToManyWidget()
 
 
+class ScriptAdminForm(forms.ModelForm):
+    class Meta:
+        model = Script
+        widgets = {
+            # 'modules': forms.CheckboxSelectMultiple,
+            'modules': SelectMultipleDropdown,
+        }
+        exclude = []
+
+
 class CaseAdminForm(forms.ModelForm):
     # results = ResultsField()
-    teardown = Script.objects.filter(default_teardown_script=True)
+
 
     class Meta:
         model = Case
+        teardown = Script.objects.filter(default_teardown_script=True)
         # model.teardown = Script.objects.filter(default_teardown_script=True)
         # if not model.pk:
         #     model.teardown = Script.objects.filter(default_teardown_script=True)

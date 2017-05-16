@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from smart_QC.libs.json_field import JSONField
 import ast
 from sortedm2m.fields import SortedManyToManyField
+from multiselectfield import MultiSelectField
 from django.utils.translation import ugettext_lazy as _
 
 # Create your models here.
@@ -213,11 +214,14 @@ class Script(BaseModel):
                                 help_text="""Variable name to save result returned by
                                         expression evaluation. Syntax: ${variable}""")
     global_scope = models.BooleanField(default=False, help_text="Available to referenced by other case.")
-    modules = models.CharField(max_length=255, blank=True, help_text="""Used to specify a comma separated list of
-    Python modules to be imported and added to the evaluation namespace.""")
+    modules = MultiSelectField(choices=settings.EVAL_SAFE_MODULES,
+                               null=True, blank=True,
+                               help_text="Python modules to be imported and added to the evaluation namespace.")
+    # modules = models.CharField(max_length=255, blank=True, help_text="""Used to specify a comma separated list of
+    # Python modules to be imported and added to the evaluation namespace.""")
     namespace = models.CharField(max_length=255, blank=True, default='{}', help_text="""Used to pass a custom evaluation namespace
     as a dictionary. Possible ``modules`` are added to this namespace.Syntax: ${variable.namespace}""")
-    expression = models.TextField(blank=True, help_text="Expression in Python to be evaluated.")
+    expression = models.TextField(blank=True,  help_text="Expression in Python to be evaluated.")
 
     def __str__(self):
         return self.name
@@ -228,33 +232,33 @@ class Script(BaseModel):
         """
         if self.variable == "" or (self.variable is not None and self.variable.strip() == ""):
             self.variable = None
-        safe_modules = settings.EVAL_SAFE_MODULES
-        if isinstance(self.modules, unicode):
-            input_modules = self.modules.replace(' ', '').split(',') if self.modules else []
-        else:
-            raise ValidationError('modules is not string')
-        if isinstance(self.namespace, unicode):
-            try:
-                ast.literal_eval(self.namespace)
-            except Exception as e:
-                raise ValidationError('Namespace SyntaxError: ' + str(e))
-        else:
-            raise ValidationError('namespace is not string')
-        unsafe_modules = list(set(input_modules).difference(set(safe_modules)))
-        if unsafe_modules:
-            raise ValidationError('Unsafe module(s): %s' % ','.join(unsafe_modules))
-        #
-        ns = ast.literal_eval(self.namespace)
-        a={"ee":2222,"gg":33}
-        ns.update((m, __import__(m)) for m in input_modules if m)
-        print(ns)
-        ns.update(a)
-        print(ns)
-        from asteval import Interpreter
-        aeval = Interpreter()
-        aeval.symtable.update(ns)
-        b=aeval('random.randint(1,ee)')
-        print(b)
+    #     safe_modules = settings.EVAL_SAFE_MODULES
+    #     # if isinstance(self.modules, unicode):
+    #     #     input_modules = self.modules.replace(' ', '').split(',') if self.modules else []
+    #     # else:
+    #     #     raise ValidationError('modules is not string')
+    #     if isinstance(self.namespace, unicode):
+    #         try:
+    #             ast.literal_eval(self.namespace)
+    #         except Exception as e:
+    #             raise ValidationError('Namespace SyntaxError: ' + str(e))
+    #     else:
+    #         raise ValidationError('namespace is not string')
+    #     # unsafe_modules = list(set(input_modules).difference(set(safe_modules)))
+    #     # if unsafe_modules:
+    #     #     raise ValidationError('Unsafe module(s): %s' % ','.join(unsafe_modules))
+    #     # #
+    #     ns = ast.literal_eval(self.namespace)
+    #     a={"ee":2222,"gg":33}
+    #     # ns.update((m, __import__(m)) for m in input_modules if m)
+    #     # print(ns)
+    #     # ns.update(a)
+    #     # print(ns)
+    #     # from asteval import Interpreter
+    #     # aeval = Interpreter()
+    #     # aeval.symtable.update(ns)
+    #     # b=aeval('random.randint(1,ee)')
+    #     # print(b)
 
     def evaluate(self):
         """Evaluates the given code in Python and returns the results.
@@ -307,6 +311,10 @@ class Script(BaseModel):
         verbose_name_plural = verbose_name + 's'
 
 
+def get_default_script():
+    return Script.objects.filter(default_teardown_script=True)
+
+
 def handle_variables_in_expression(expression):
     if isinstance(expression, str) and '$' in expression:
         expression, variables = handle_variables_in_expression(expression)
@@ -332,16 +340,8 @@ class Case(BaseModel, RequestModel):
     setup = SortedManyToManyField(Script, blank=True, related_name="setup_set",
                                   help_text='Scripts running before sending the request, e.g. set variable, prepare test environment.')
     teardown = SortedManyToManyField(Script, blank=True, related_name="teardown_set",
-                                     # default=default_script,
+                                     default=get_default_script,
                                      help_text='Scripts running after request sent, e.g. set global variable, asserting, clear test environment')
-    # setup = models.ManyToManyField(Script, blank=True, related_name="setup_set",
-    #                                help_text='Scripts running before sending the request, e.g. set variable, prepare test environment.')
-    # teardown = models.ManyToManyField(Script, blank=True, related_name="teardown_set",
-    #                                   default=Script.objects.filter(default_teardown_script=True),
-    #                                   help_text='Scripts running after request sent, e.g. set global variable, asserting, clear test environment')
-    # # teardown = models.ManyToManyField(Script, through='CaseTeardownScript', blank=True,
-    #                                   default=Script.objects.filter(default_teardown_script=True),
-    #                                   help_text='Scripts running after request sent, e.g. set global variable, asserting, clear test environment')
     last_run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
 
     # def __init__(self, *args, **kwargs):
@@ -383,24 +383,6 @@ Case._meta.get_field('protocol').blank = True
 Case._meta.get_field('host').blank = True
 Case._meta.get_field('host').null = True
 Case._meta.get_field('path').blank = True
-
-
-class CaseTeardownScript(models.Model):
-    case = models.ForeignKey(Case, on_delete=models.CASCADE)
-    script = models.ForeignKey(Script, on_delete=models.CASCADE)
-    rank = models.PositiveIntegerField()
-    #
-    # class Meta:
-    #     ordering = ('number',)
-
-
-class CaseSetupScript(models.Model):
-    case = models.ForeignKey(Case, on_delete=models.CASCADE)
-    script = models.ForeignKey(Script, on_delete=models.CASCADE)
-    rank = models.PositiveIntegerField()
-    #
-    # class Meta:
-    #     ordering = ('number',)
 
 
 class ReplayLog(models.Model):

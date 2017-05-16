@@ -28,12 +28,14 @@ class Runner(object):
         self.case_ids = [i.get('id') for i in case]
         self.selected_case = Case.objects.filter(id__in=self.case_ids)
         self.session = requests.Session()
-        self.variable = {}
+        self.namespace = {}  # 包括全局、本地和当前
+        self.report = {}  # 测试报告对象，后面会添加model并render
+        # self.global_ns = {}
+        # self.local_ns = {}
+        # self.current_ns = {}
 
     def run(self):
         selected_case_reordered = self._reorder(self.selected_case, self.case_ids)
-        # self.variable =
-        # selected_case_reordered = AllCaseParse(selected_case_reordered)
         for c in selected_case_reordered:
             if c.case_type == 0:  # Single API
                 self._single_api_replay(c)
@@ -62,6 +64,9 @@ class Runner(object):
         # 替换host, 运行参数化，运行setup, 发起request，断言，添加或修改参数，运行teardown
         INVOKE_LEVEL["current"] = INVOKE_LEVEL["from"]
         print('invoke _single_api_replay %s %s' % (INVOKE_LEVEL["current"], case.id))
+        # 定义命名空间
+        self.namespace.local.update  # 获取当前用例命名空间
+        self.current_ns = {}
         # pre request: prepare request params, running setup
         send_host = case.host.name
         for host_tuple in self.valid_hosts:
@@ -98,11 +103,8 @@ class Runner(object):
         print(res.status_code)
 
     def _api_group_replay(self, case):
-        sub_case_ids = case.invoke_cases.values_list('id')
-        sub_cases = Case.objects.filter(id__in=sub_case_ids)
-        id_list = [i[0] for i in sub_case_ids]
-        sub_cases_reorder = self._reorder(sub_cases, id_list)
-        for c in sub_cases_reorder:
+        sub_cases = case.invoke_cases.all()
+        for c in sub_cases:
             if c.case_type == 0:  # Single API
                 self._single_api_replay(c)
             elif c.case_type == 1 and INVOKE_LEVEL["current"] <= INVOKE_LEVEL["to"]:  # APIGroup
