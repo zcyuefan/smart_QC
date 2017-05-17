@@ -11,7 +11,7 @@
 """
 from __future__ import unicode_literals
 from smart_QC.apps.test_api.models import TestHost, Case
-# from parse import AllCaseParse, CaseParse
+from .variables import Scope, EvalExpression, ConstantStr
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
@@ -28,11 +28,8 @@ class Runner(object):
         self.case_ids = [i.get('id') for i in case]
         self.selected_case = Case.objects.filter(id__in=self.case_ids)
         self.session = requests.Session()
-        self.namespace = {}  # 包括全局、本地和当前
+        self.scope = Scope()  # 包括全局、本地和当前
         self.report = {}  # 测试报告对象，后面会添加model并render
-        # self.global_ns = {}
-        # self.local_ns = {}
-        # self.current_ns = {}
 
     def run(self):
         selected_case_reordered = self._reorder(self.selected_case, self.case_ids)
@@ -40,9 +37,11 @@ class Runner(object):
             if c.case_type == 0:  # Single API
                 self._single_api_replay(c)
                 # add replay log, update case status
+                self.scope.clear_temp()  # 清理当前scope
             elif c.case_type == 1:  # APIGroup
                 self._api_group_replay(c)
                 # add replay log, update case status
+                self.scope.clear_temp()  # 清理当前scope
         return None
 
     def stop(self):
@@ -64,9 +63,24 @@ class Runner(object):
         # 替换host, 运行参数化，运行setup, 发起request，断言，添加或修改参数，运行teardown
         INVOKE_LEVEL["current"] = INVOKE_LEVEL["from"]
         print('invoke _single_api_replay %s %s' % (INVOKE_LEVEL["current"], case.id))
-        # 定义命名空间
-        self.namespace.local.update  # 获取当前用例命名空间
-        self.current_ns = {}
+        # run setup
+        for setup_step in case.setup:
+            setup_step_runner = ScriptStepRunner(setup_step, self.scope)
+            self.scope = setup_step_runner.final_scope()
+        # pre request
+        request_parser = RequestParser(case, self.scope)
+        request_params = request_parser.final_params
+        # send request
+        req = requests.Request(request_params).prepare()
+        # req = requests.Request(method=case.method, url=send_url, headers=send_headers, data=send_data,
+        #                            params=send_params).prepare()
+
+        res = self.session.send(req, verify=False)
+        self.scope.update()  # 将运行结果插入
+        # run teardown
+        for teardown_step in case.teardown:
+            teardown_step_runner = ScriptStepRunner(teardown_step, self.scope)
+            self.scope = teardown_step_runner.final_scope()
         # pre request: prepare request params, running setup
         send_host = case.host.name
         for host_tuple in self.valid_hosts:
@@ -115,3 +129,61 @@ class Runner(object):
                 print('invoke limited %s %s' % (INVOKE_LEVEL["current"], c.id))
                 INVOKE_LEVEL["current"] = INVOKE_LEVEL["from"]
                 continue
+
+
+class ScriptStepRunner(object):
+
+    def __init__(self, script, scope):
+        self.script = script
+        self.scope = scope
+        self.variable = script.variable
+        self.modules = script.modules
+        self.namespace = script.namespace
+        self.expression = script.expression
+        self._run()
+
+    def _run(self):
+        input_modules = self.modules.replace(' ', '').split(',') if self.modules else []
+        self.scope.current_ns.update(self.scope.global_ns)
+        self.scope.current_ns.update(self.scope.local_ns)
+        self.scope.current_ns.update((m, __import__(m)) for m in input_modules if m)
+        self.scope.current_ns.update(self.namespace)
+        evaled = EvalExpression(self.expression, self.scope)
+        evaled.evaluate()
+        self.scope = evaled.scope
+
+    def final_scope(self):
+        if self.script.variable and self.script.global_scope:
+            self.scope.update('global_ns', {})  # 加入self.variable，self.variable_ns
+        return self.scope
+
+
+class RequestParser(object):
+    scope = Scope()
+    final_params = {}
+
+    def __init__(self, case, scope, valid_hosts):
+        self.scope = scope
+        self.case = case
+        self.valid_hosts = valid_hosts
+
+    def parse_all(self):
+        # 依次处理url,header等信息
+        self.final_params.update(('method', self.case.method))
+        send_host = self.case.host.name
+        for host_tuple in self.valid_hosts:
+            if self.case.host.module == host_tuple[1]:
+                send_host = host_tuple[0]
+                break
+        url = self.case.protocol + '://' + send_host + self.case.path
+        self.final_params.update(('url', url))
+        final_params = {"headers": self.case.request_headers, "data": self.case.data, "params": self.case.params}
+        for k, v in final_params:
+            v = self._parse(v)
+            self.final_params.update((k, v))
+
+    def _parse(self, to_parse):
+        if isinstance(to_parse, unicode):
+            return ConstantStr(input_str=to_parse, scope=self.scope)
+        else:
+            return to_parse if to_parse else None
