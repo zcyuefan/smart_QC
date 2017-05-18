@@ -20,6 +20,7 @@ from xadmin.views.base import filter_hook
 
 from models import TestEnvironment
 from tasks import run_case
+import json
 
 
 class FailCase(BaseActionView):
@@ -51,7 +52,7 @@ class RunCase(BaseActionView):
             arguments_str = self.request.POST.get('arguments', '')
             if arguments_str:
                 try:
-                    arguments_obj = eval(arguments_str)
+                    arguments_obj = json.loads(arguments_str)
                     selected_environment = arguments_obj.get('test_environment', '')
                     selected_case = arguments_obj.get('case', '')
                     if int(selected_environment.get('id')) and isinstance(selected_case, list):

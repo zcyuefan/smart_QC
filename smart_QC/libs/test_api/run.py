@@ -12,6 +12,7 @@
 from __future__ import unicode_literals
 from smart_QC.apps.test_api.models import TestHost, Case
 from .variables import Scope, EvalExpression, ConstantStr
+import ast
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
@@ -64,57 +65,57 @@ class Runner(object):
         INVOKE_LEVEL["current"] = INVOKE_LEVEL["from"]
         print('invoke _single_api_replay %s %s' % (INVOKE_LEVEL["current"], case.id))
         # run setup
-        for setup_step in case.setup:
+        setup_scripts = case.setup.all()
+        teardown_scripts = case.teardown.all()
+        for setup_step in setup_scripts:
             setup_step_runner = ScriptStepRunner(setup_step, self.scope)
             self.scope = setup_step_runner.final_scope()
         # pre request
-        request_parser = RequestParser(case, self.scope)
+        request_parser = RequestParser(case, self.scope, self.valid_hosts)
         request_params = request_parser.final_params
+        print(request_params)
         # send request
-        req = requests.Request(request_params).prepare()
-        # req = requests.Request(method=case.method, url=send_url, headers=send_headers, data=send_data,
-        #                            params=send_params).prepare()
-
+        req = requests.Request(**request_params).prepare()
         res = self.session.send(req, verify=False)
         self.scope.update()  # 将运行结果插入
         # run teardown
-        for teardown_step in case.teardown:
+        for teardown_step in teardown_scripts:
             teardown_step_runner = ScriptStepRunner(teardown_step, self.scope)
             self.scope = teardown_step_runner.final_scope()
-        # pre request: prepare request params, running setup
-        send_host = case.host.name
-        for host_tuple in self.valid_hosts:
-            if case.host.module == host_tuple[1]:
-                send_host = host_tuple[0]
-                break
-        send_url = case.protocol + '://' + send_host + case.path
-        send_headers = case.request_headers if case.request_headers else None
-        send_data = case.data if case.data else None
-        send_params = case.params if case.params else None
-        # print(send_url, type(send_url))
-        # print(send_data, type(send_data))
-        # print(send_params, type(send_params))
+        # # pre request: prepare request params, running setup
+        # send_host = case.host.name
+        # for host_tuple in self.valid_hosts:
+        #     if case.host.module == host_tuple[1]:
+        #         send_host = host_tuple[0]
+        #         break
+        # send_url = case.protocol + '://' + send_host + case.path
+        # send_headers = case.request_headers if case.request_headers else None
+        # send_data = case.data if case.data else None
+        # send_params = case.params if case.params else None
+        # # print(send_url, type(send_url))
+        # # print(send_data, type(send_data))
+        # # print(send_params, type(send_params))
+        #
+        # # send request
+        # req = requests.Request(method=case.method, url=send_url, headers=send_headers, data=send_data,
+        #                        params=send_params).prepare()
+        # res = self.session.send(req, verify=False)
+        # from robot.libraries.BuiltIn import _Misc
+        # a = _Misc()
+        # ns = {"hh": 4}
+        # # b=a.evaluate('random.randint(0, hh) ', modules='random, sys', namespace=ns)
+        # c = a.evaluate('1 + hh', namespace=ns)
+        # print(c)
+        # # after request: asserting, running teardown, new or update variables
+        # # d=res.content
+        # # import json
+        # # e=json.loads(d)
+        # e = res.json()
+        # print(e.get("resultInfo"))
 
-        # send request
-        req = requests.Request(method=case.method, url=send_url, headers=send_headers, data=send_data,
-                               params=send_params).prepare()
-        res = self.session.send(req, verify=False)
-        from robot.libraries.BuiltIn import _Misc
-        a = _Misc()
-        ns = {"hh": 4}
-        # b=a.evaluate('random.randint(0, hh) ', modules='random, sys', namespace=ns)
-        c = a.evaluate('1 + hh', namespace=ns)
-        print(c)
-        # after request: asserting, running teardown, new or update variables
-        # d=res.content
-        # import json
-        # e=json.loads(d)
-        e = res.json()
-        print(e.get("resultInfo"))
-
-        print(res.request.url)
-        print(res.content)
-        print(res.status_code)
+        # print(res.request.url)
+        # print(res.content)
+        # print(res.status_code)
 
     def _api_group_replay(self, case):
         sub_cases = case.invoke_cases.all()
@@ -138,12 +139,12 @@ class ScriptStepRunner(object):
         self.scope = scope
         self.variable = script.variable
         self.modules = script.modules
-        self.namespace = script.namespace
+        self.namespace = ast.literal_eval(script.namespace)
         self.expression = script.expression
         self._run()
 
     def _run(self):
-        input_modules = self.modules.replace(' ', '').split(',') if self.modules else []
+        input_modules = self.modules if self.modules else []
         self.scope.current_ns.update(self.scope.global_ns)
         self.scope.current_ns.update(self.scope.local_ns)
         self.scope.current_ns.update((m, __import__(m)) for m in input_modules if m)
@@ -184,6 +185,6 @@ class RequestParser(object):
 
     def _parse(self, to_parse):
         if isinstance(to_parse, unicode):
-            return ConstantStr(input_str=to_parse, scope=self.scope)
+            return ConstantStr(input_str=to_parse, scope=self.scope).evaluate()
         else:
             return to_parse if to_parse else None

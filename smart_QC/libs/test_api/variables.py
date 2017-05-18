@@ -11,6 +11,7 @@ file doc
 """
 from __future__ import unicode_literals
 from asteval import Interpreter
+import re
 
 
 class Scope(object):
@@ -44,29 +45,32 @@ class StrWithVariable(object):
     input_str = ""
     parsed_str = ""
     scope = Scope()
+    variable_list = []
+    variable_dict = {}
 
     def __init__(self, input_str, scope):
         self.input_str = input_str
+        self.parsed_str = ""
         self.scope = scope
 
-    def finder(self):
-        pass
+    def find(self):
+        if isinstance(self.input_str, unicode) and '$' in self.input_str:
+            variable_pattern = re.compile(r'\$\{.*?\}', re.M)
+            self.variable_list = variable_pattern.findall(self.input_str)
+        return self.variable_list
 
-    def store(self):
-        pass
+    def get_value(self):
+        aeval = Interpreter()
+        aeval.symtable.update(self.scope.current_ns)
+        for var in self.variable_list:
+            self.variable_dict.update((var, aeval(var[2:-1].strip(' '))))
+        return self.variable_dict
 
     def parse(self):
+        for var in self.variable_list:
+            var_name = var[2:-1].strip(' ')
+            self.parsed_str.replace(var, var_name)
         return self.parsed_str
-
-    def _escape(self):
-        #  忽略掉\${variable}
-        pass
-
-    def replace(self):
-        pass
-
-    def _lower_variable_name(self):
-        pass
 
 
 class EvalExpression(StrWithVariable):
@@ -81,21 +85,6 @@ class EvalExpression(StrWithVariable):
 
 class ConstantStr(StrWithVariable):
     def evaluate(self):
-        pass
-
-
-class Variable(object):
-    def __init__(self, name):
-        self.name = name
-        self.value = None
-
-
-    def find(self):
-        # 在local和global中寻找变量
-        pass
-
-    def eval(self):
-        pass
-
-    def update_namespace(self):
-        pass
+        for k, v in self.variable_dict:
+            self.parsed_str.replace(k, v)
+        return self.parsed_str
