@@ -33,12 +33,12 @@ class Scope(object):
             self.local_ns.update(value)
 
     def clear_temp(self):
-        self.current_ns = {}
-        self.local_ns = {}
+        self.current_ns.clear()
+        self.local_ns.clear()
 
     def clear_all(self):
         self.clear_temp()
-        self.global_ns = {}
+        self.global_ns.clear()
 
 
 class StrWithVariable(object):
@@ -50,7 +50,7 @@ class StrWithVariable(object):
 
     def __init__(self, input_str, scope):
         self.input_str = input_str
-        self.parsed_str = ""
+        self.parsed_str = input_str
         self.scope = scope
 
     def find(self):
@@ -75,6 +75,7 @@ class StrWithVariable(object):
 
 class EvalExpression(StrWithVariable):
     def evaluate(self):
+        self.find()
         self.parse()
         aeval = Interpreter()
         aeval.symtable.update(self.scope.current_ns)
@@ -85,6 +86,10 @@ class EvalExpression(StrWithVariable):
 
 class ConstantStr(StrWithVariable):
     def evaluate(self):
-        for k, v in self.variable_dict:
-            self.parsed_str.replace(k, v)
+        self.find()
+        aeval = Interpreter()
+        aeval.symtable.update(self.scope.current_ns)
+        for var in self.variable_list:
+            if var:
+                self.parsed_str = self.parsed_str.replace(var, str(aeval(var[2:-1].strip(' '))))
         return self.parsed_str

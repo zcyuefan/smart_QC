@@ -220,7 +220,7 @@ class Script(BaseModel):
     # modules = models.CharField(max_length=255, blank=True, help_text="""Used to specify a comma separated list of
     # Python modules to be imported and added to the evaluation namespace.""")
     namespace = models.CharField(max_length=255, blank=True, default='{}', help_text="""Used to pass a custom evaluation namespace
-    as a dictionary. Possible ``modules`` are added to this namespace.If ${variable} not blank, ${variable_ns} is available""")
+    as a dictionary. Possible ``modules`` are added to this namespace.""")
     expression = models.TextField(blank=True,  help_text="Expression in Python to be evaluated.")
 
     def __str__(self):

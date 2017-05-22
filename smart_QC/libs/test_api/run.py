@@ -69,19 +69,23 @@ class Runner(object):
         teardown_scripts = case.teardown.all()
         for setup_step in setup_scripts:
             setup_step_runner = ScriptStepRunner(setup_step, self.scope)
+            setup_step_runner.run()
             self.scope = setup_step_runner.final_scope()
         # pre request
         request_parser = RequestParser(case, self.scope, self.valid_hosts)
+        request_parser.parse_all()
         request_params = request_parser.final_params
         print(request_params)
         # send request
         req = requests.Request(**request_params).prepare()
         res = self.session.send(req, verify=False)
-        self.scope.update()  # 将运行结果插入
+        # self.scope.update()  # 将运行结果插入
         # run teardown
         for teardown_step in teardown_scripts:
             teardown_step_runner = ScriptStepRunner(teardown_step, self.scope)
+            teardown_step_runner.run()
             self.scope = teardown_step_runner.final_scope()
+        print(res.content)
         # # pre request: prepare request params, running setup
         # send_host = case.host.name
         # for host_tuple in self.valid_hosts:
@@ -141,21 +145,26 @@ class ScriptStepRunner(object):
         self.modules = script.modules
         self.namespace = ast.literal_eval(script.namespace)
         self.expression = script.expression
-        self._run()
+        self.result = {}
 
-    def _run(self):
+    def run(self):
         input_modules = self.modules if self.modules else []
         self.scope.current_ns.update(self.scope.global_ns)
         self.scope.current_ns.update(self.scope.local_ns)
         self.scope.current_ns.update((m, __import__(m)) for m in input_modules if m)
         self.scope.current_ns.update(self.namespace)
         evaled = EvalExpression(self.expression, self.scope)
-        evaled.evaluate()
+        variable_value = evaled.evaluate()
+        self.result[self.variable] = variable_value
         self.scope = evaled.scope
 
+
     def final_scope(self):
-        if self.script.variable and self.script.global_scope:
-            self.scope.update('global_ns', {})  # 加入self.variable，self.variable_ns
+        if self.script.variable:
+            if self.script.global_scope:
+                self.scope.update('global_ns', self.result)  # 加入self.variable，self.variable_ns
+            else:
+                self.scope.update('current_ns', self.result)
         return self.scope
 
 
@@ -170,21 +179,22 @@ class RequestParser(object):
 
     def parse_all(self):
         # 依次处理url,header等信息
-        self.final_params.update(('method', self.case.method))
+        self.final_params['method'] = self.case.method
         send_host = self.case.host.name
         for host_tuple in self.valid_hosts:
             if self.case.host.module == host_tuple[1]:
                 send_host = host_tuple[0]
                 break
         url = self.case.protocol + '://' + send_host + self.case.path
-        self.final_params.update(('url', url))
+        self.final_params['url'] = url
         final_params = {"headers": self.case.request_headers, "data": self.case.data, "params": self.case.params}
-        for k, v in final_params:
+        for k, v in final_params.items():
             v = self._parse(v)
-            self.final_params.update((k, v))
+            self.final_params.update(((k, v),))
 
     def _parse(self, to_parse):
-        if isinstance(to_parse, unicode):
-            return ConstantStr(input_str=to_parse, scope=self.scope).evaluate()
+        if isinstance(to_parse, unicode) and to_parse:
+            constant_str_obj = ConstantStr(input_str=to_parse, scope=self.scope)
+            return constant_str_obj.evaluate()
         else:
             return to_parse if to_parse else None
