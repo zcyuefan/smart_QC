@@ -54,7 +54,7 @@ class StrWithVariable(object):
         self.scope = scope
 
     def find(self):
-        if isinstance(self.input_str, unicode) and '$' in self.input_str:
+        if isinstance(self.input_str, (unicode, str)) and '$' in self.input_str:
             variable_pattern = re.compile(r'\$\{.*?\}', re.M)
             self.variable_list = variable_pattern.findall(self.input_str)
         return self.variable_list
@@ -69,7 +69,7 @@ class StrWithVariable(object):
     def parse(self):
         for var in self.variable_list:
             var_name = var[2:-1].strip(' ')
-            self.parsed_str.replace(var, var_name)
+            self.parsed_str = self.parsed_str.replace(var, var_name)
         return self.parsed_str
 
 

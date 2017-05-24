@@ -5,12 +5,12 @@ from __future__ import unicode_literals
 import xadmin
 from xadmin import views
 # from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Variable, Assertion
-from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Script
+from .models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Script
 from .forms import CaseAdminForm, ScriptAdminForm
 from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Side, PrependedAppendedText
 from xadmin.plugins.inline import Inline
-# from xadmin.plugins.batch import BatchChangeAction
-from actions import RunCase, FailCase
+from xadmin.plugins.batch import BatchChangeAction
+from .actions import RunCase, FailCase, BatchCopyAction
 
 
 class TestHostAdmin(object):
@@ -147,8 +147,10 @@ class CaseAdmin(object):
         # instance.save()
         return "<a title = 'Run this case' onclick='alert(%s)'>" \
                "<i class='fa fa-play-circle fa-lg'></i></a>" % instance.id
-    actions = [RunCase, FailCase]
-
+    actions = [RunCase, FailCase, BatchChangeAction, BatchCopyAction]
+    # batch_fields = [f.name for f in Case._meta.get_fields()]
+    batch_fields = ['template', 'case_type', 'invoke_cases', 'description', 'tag', 'setup', 'method', 'protocol',
+                    'host', 'path', 'request_headers', 'params', 'data', 'teardown']
     style_fields = {'invoke_cases': 'sorted_m2m',
                     'tag': 'm2m_dropdown_with_help_text',
                     'setup': 'sorted_m2m',
@@ -218,6 +220,7 @@ class ReplayLogAdmin(object):
     list_select_related = True
     model_icon = 'fa fa-file'
     reversion_enable = True
+    actions = [BatchCopyAction, ]
 
 
 class ScriptAdmin(object):

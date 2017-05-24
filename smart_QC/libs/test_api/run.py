@@ -14,6 +14,7 @@ from smart_QC.apps.test_api.models import TestHost, Case
 from .variables import Scope, EvalExpression, ConstantStr
 import ast
 import requests
+import json
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -79,13 +80,13 @@ class Runner(object):
         # send request
         req = requests.Request(**request_params).prepare()
         res = self.session.send(req, verify=False)
-        # self.scope.update()  # 将运行结果插入
+        self.scope.update('current_ns', {'response': res})  # 将运行结果插入
         # run teardown
         for teardown_step in teardown_scripts:
             teardown_step_runner = ScriptStepRunner(teardown_step, self.scope)
             teardown_step_runner.run()
             self.scope = teardown_step_runner.final_scope()
-        print(res.content)
+        print(type(res), res)
         # # pre request: prepare request params, running setup
         # send_host = case.host.name
         # for host_tuple in self.valid_hosts:
@@ -118,8 +119,6 @@ class Runner(object):
         # print(e.get("resultInfo"))
 
         # print(res.request.url)
-        # print(res.content)
-        # print(res.status_code)
 
     def _api_group_replay(self, case):
         sub_cases = case.invoke_cases.all()
@@ -157,6 +156,7 @@ class ScriptStepRunner(object):
         variable_value = evaled.evaluate()
         self.result[self.variable] = variable_value
         self.scope = evaled.scope
+        print("%s evaluate result is: %s %s" % (self.expression, type(variable_value), variable_value))
 
 
     def final_scope(self):
@@ -193,8 +193,17 @@ class RequestParser(object):
             self.final_params.update(((k, v),))
 
     def _parse(self, to_parse):
-        if isinstance(to_parse, unicode) and to_parse:
-            constant_str_obj = ConstantStr(input_str=to_parse, scope=self.scope)
-            return constant_str_obj.evaluate()
+        if to_parse:
+            if isinstance(to_parse, unicode):
+                constant_str_obj = ConstantStr(input_str=to_parse, scope=self.scope)
+                return constant_str_obj.evaluate()
+            elif isinstance(to_parse, (dict, list)):
+                constant_str_obj = ConstantStr(input_str=str(to_parse), scope=self.scope)
+                return ast.literal_eval(constant_str_obj.evaluate())
+            # elif isinstance(to_parse, list):
+            #     constant_str_obj = ConstantStr(input_str=str(to_parse), scope=self.scope)
+            #     return ast.literal_eval(constant_str_obj.evaluate())
+            else:
+                return to_parse
         else:
-            return to_parse if to_parse else None
+            return to_parse

@@ -14,6 +14,7 @@ from xadmin.plugins.actions import BaseActionView, ACTION_CHECKBOX_NAME
 from django.utils.translation import ugettext as _
 from django.utils.encoding import force_unicode
 from django.template.response import TemplateResponse
+from django.db import models
 
 from django.core.exceptions import PermissionDenied
 from xadmin.views.base import filter_hook
@@ -126,3 +127,40 @@ class RunCase(BaseActionView):
 
         # Display the confirmation page
         return TemplateResponse(self.request, 'test_api/run_case_selected_confirm.html', context)
+
+
+class BatchCopyAction(BaseActionView):
+    action_name = "batch_copy"    #: 相当于这个 Action 的唯一标示, 尽量用比较针对性的名字
+    description = _(u'Copy selected %(verbose_name_plural)s')  #: 描述, 出现在 Action 菜单中, 可以使用 ``%(verbose_name_plural)s`` 代替 Model 的名字.
+
+    model_perm = 'add'    #: 该 Action 所需权限
+    icon = 'fa fa-clipboard' # 显示图标
+
+    def do_action(self, queryset):
+        # queryset 是包含了已经选择的数据的 queryset
+        for entry in queryset:
+            m2m_field_names = [f.name for f in entry._meta.get_fields() if f.many_to_many and not f.auto_created] # 所有m2m field
+            auto_created_field_names = [f.name for f in entry._meta.get_fields() if f.auto_created] # 所有自动创建字段(需要设置None)
+            unique_field_names = [f.name for f in entry._meta.get_fields() if not f.is_relation and f.unique]  # 所有不唯一字段，需要加唯一标识
+            # old_hosts = entry.hosts.all()
+            # entry.pk = None
+            # entry.id = None
+            # entry.save()
+            # entry.hosts.set(old_hosts)
+            # def get_m2m(entry, feild_name):
+            #     return entry._meta.get_field(feild_name).trough.all()
+            #
+            # print(get_m2m(entry, 'invoke_cases'))
+            # print(entry.invoke_cases.all())
+            # print(entry.invoke_cases, type(entry.invoke_cases))
+            # print(entry.tag, type(entry.tag))
+            # print(entry.setup.all())
+            old_m2m = []
+            old_m2m_entries = []
+            for feild_name in m2m_field_names:
+                old_m2m.append(eval("entry.%s" % (feild_name)))
+                old_m2m_entries.append(eval("entry.%s.all()" % (feild_name)))
+            print(old_m2m, old_m2m_entries)
+            # old_m2m_entries = old_m2m[0].all()
+            # old_m2m[0].set(old_m2m_entries)
+            # eval("entry.%s.set(%s)" % ('invoke_cases', old_m2m[0]))

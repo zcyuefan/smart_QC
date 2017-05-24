@@ -221,7 +221,29 @@ class Script(BaseModel):
     # Python modules to be imported and added to the evaluation namespace.""")
     namespace = models.CharField(max_length=255, blank=True, default='{}', help_text="""Used to pass a custom evaluation namespace
     as a dictionary. Possible ``modules`` are added to this namespace.""")
-    expression = models.TextField(blank=True,  help_text="Expression in Python to be evaluated.")
+    expression = models.TextField(blank=True,
+                                  help_text="""Python code to be evaluated,available variables:
+                                               <table id="id_expression_help" class="tablesorter table table-bordered table-striped table-hover">
+                                                <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Type</th>
+                                                    <th>Value</th>
+                                                    <th>Usage</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>${response}</td>
+                                                        <td>class 'requests.models.Response'</td>
+                                                        <td>Response object</td>
+                                                        <td>${response}.status_code,${response}.request,<br/>
+                                                        ${response}.json(),${response}.content <br/>
+                                                        Example expression: assert ${response}.status_code==200</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                               """)
 
     def __str__(self):
         return self.name
@@ -383,7 +405,7 @@ Case._meta.get_field('protocol').blank = True
 Case._meta.get_field('host').blank = True
 Case._meta.get_field('host').null = True
 Case._meta.get_field('path').blank = True
-
+# Case._meta.many_to_many()
 
 class ReplayLog(models.Model):
     """

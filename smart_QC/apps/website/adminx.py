@@ -186,6 +186,8 @@ class HostGroupAdmin(object):
 
     search_fields = ['name']
     style_fields = {'hosts': 'checkbox-inline'}
+    from smart_QC.apps.test_api.actions import BatchCopyAction
+    actions = [BatchCopyAction, ]
 
 
 class MaintainLogAdmin(object):
