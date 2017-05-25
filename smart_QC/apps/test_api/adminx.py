@@ -233,6 +233,7 @@ class ScriptAdmin(object):
     list_select_related = True
     model_icon = 'fa fa-edit'
     reversion_enable = True
+    actions = [BatchCopyAction, ]
     form_layout = (
         Main(Fieldset('', Row('name', 'default_teardown_script'), Row(PrependedAppendedText('variable', '${', '}'), 'global_scope'), Row('modules', 'namespace', ), 'expression',
                       css_class='unsort short_label no_title')),

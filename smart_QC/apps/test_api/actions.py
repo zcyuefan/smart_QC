@@ -22,6 +22,7 @@ from xadmin.views.base import filter_hook
 from models import TestEnvironment
 from tasks import run_case
 import json
+import time
 
 
 class FailCase(BaseActionView):
@@ -137,11 +138,15 @@ class BatchCopyAction(BaseActionView):
     icon = 'fa fa-clipboard' # 显示图标
 
     def do_action(self, queryset):
+        m2m_field_names = [f.name for f in queryset[0]._meta.get_fields() if
+                           f.many_to_many and not f.auto_created]  # 所有m2m field
+        # auto_created_field_names = [f.name for f in queryset[0]._meta.get_fields() if f.auto_created]  # 所有自动创建字段(需要设置None)
+        unique_field_names = [f.name for f in queryset[0]._meta.get_fields() if
+                              not f.is_relation and f.unique and not f.auto_created]  # 除自动创建外所有不唯一字段，需要加唯一标识
+        unique_tag = '_copy' + str(time.time())[-5:].replace('.', '')
         # queryset 是包含了已经选择的数据的 queryset
         for entry in queryset:
-            m2m_field_names = [f.name for f in entry._meta.get_fields() if f.many_to_many and not f.auto_created] # 所有m2m field
-            auto_created_field_names = [f.name for f in entry._meta.get_fields() if f.auto_created] # 所有自动创建字段(需要设置None)
-            unique_field_names = [f.name for f in entry._meta.get_fields() if not f.is_relation and f.unique]  # 所有不唯一字段，需要加唯一标识
+
             # old_hosts = entry.hosts.all()
             # entry.pk = None
             # entry.id = None
@@ -161,6 +166,21 @@ class BatchCopyAction(BaseActionView):
                 old_m2m.append(eval("entry.%s" % (feild_name)))
                 old_m2m_entries.append(eval("entry.%s.all()" % (feild_name)))
             print(old_m2m, old_m2m_entries)
+            entry.pk = None
+            entry.id = None
+            for feild_name in unique_field_names:
+                exec(
+"""
+try:
+    entry.%s = entry.%s + unique_tag
+except TypeError as e:
+    raise ValidationError('Update %s failed' + str(e))""" % (feild_name, feild_name, feild_name))
+            entry.save()
+            for i in range(0, len(old_m2m)):
+                # print(old_m2m[i])
+                exec('old_m2m[i].set(old_m2m_entries[i])')
+                print(old_m2m[i], old_m2m_entries[i])
             # old_m2m_entries = old_m2m[0].all()
             # old_m2m[0].set(old_m2m_entries)
             # eval("entry.%s.set(%s)" % ('invoke_cases', old_m2m[0]))
+
