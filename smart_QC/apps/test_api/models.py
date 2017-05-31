@@ -9,6 +9,11 @@ import ast
 from sortedm2m.fields import SortedManyToManyField
 from multiselectfield import MultiSelectField
 from django.utils.translation import ugettext_lazy as _
+# import the logging library
+import logging
+
+# Get an instance of a logger
+logger = logging.getLogger(__name__)
 
 # Create your models here.
 REQUEST_METHODS = (
@@ -196,10 +201,10 @@ CASE_TYPE = (
 )
 
 RUN_STATUS = (
-    (0, 'Not Run'),
-    (1, 'Running'),
-    (2, 'FAILED'),
-    (3, 'SUCCESS'),
+    (0, 'pass'),
+    (1, 'fail'),
+    (2, 'error'),
+    (3, 'never run'),
 )
 
 
@@ -282,52 +287,6 @@ class Script(BaseModel):
     #     # b=aeval('random.randint(1,ee)')
     #     # print(b)
 
-    def evaluate(self):
-        """Evaluates the given code in Python and returns the results.
-
-        ``code`` is evaluated in Python as explained in `Evaluating
-        codes`.
-
-        ``modules`` argument can be used to specify a comma separated
-        list of Python modules to be imported and added to the evaluation
-        namespace.
-
-        ``namespace`` argument can be used to pass a custom evaluation
-        namespace as a dictionary. Possible ``modules`` are added to this
-        namespace. This is a new feature in Robot Framework 2.8.4.
-        """
-        # if isinstance(self.code, str) and '$' in self.code:
-        #     self.code, variables = handle_variables_in_expression(self.code)
-        # else:
-        #     variables = {}
-        self.code, variables = handle_variables_in_expression(self.code)
-        self.namespace = self._create_evaluation_namespace()
-        try:
-            if not isinstance(self.code, str):
-                raise TypeError("Code must be string, got %s."
-                                % self._type_name(self.code))
-            if not self.code:
-                raise ValueError("Code cannot be empty.")
-            return eval(self.code, self.namespace, variables)
-        except:
-            raise RuntimeError("Evaluating code '%s' failed"
-                               % self.code)
-
-    def _type_name(self, item):
-        cls = item.__class__ if hasattr(item, '__class__') else type(item)
-        named_types = {str: 'string', bool: 'boolean', int: 'integer',
-                       type(None): 'None', dict: 'dictionary', type: 'class'}
-        return named_types.get(cls, cls.__name__)
-
-    def _handle_variables_in_code(self):
-        pass
-
-    def _create_evaluation_namespace(self):
-        self.namespace = dict(self.namespace or {})
-        self.modules = self.modules.replace(' ', '').split(',') if self.modules else []
-        self.namespace.update((m, __import__(m)) for m in self.modules if m)
-        return self.namespace
-
     class Meta:
         verbose_name = 'Script'
         verbose_name_plural = verbose_name + 's'
@@ -335,14 +294,6 @@ class Script(BaseModel):
 
 def get_default_script():
     return Script.objects.filter(default_teardown_script=True)
-
-
-def handle_variables_in_expression(expression):
-    if isinstance(expression, str) and '$' in expression:
-        expression, variables = handle_variables_in_expression(expression)
-    else:
-        variables = {}
-    return expression, variables
 
 
 class Case(BaseModel, RequestModel):
@@ -364,7 +315,7 @@ class Case(BaseModel, RequestModel):
     teardown = SortedManyToManyField(Script, blank=True, related_name="teardown_set",
                                      default=get_default_script,
                                      help_text='Scripts running after request sent, e.g. set global variable, asserting, clear test environment')
-    last_run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
+    last_run_status = models.SmallIntegerField(default=3, choices=RUN_STATUS)
 
     # def __init__(self, *args, **kwargs):
     #     super(Case, self).__init__(*args, **kwargs)
@@ -405,26 +356,27 @@ Case._meta.get_field('protocol').blank = True
 Case._meta.get_field('host').blank = True
 Case._meta.get_field('host').null = True
 Case._meta.get_field('path').blank = True
-# Case._meta.many_to_many()
 
-class ReplayLog(models.Model):
+
+class Report(BaseModel):
     """
-    用例执行结果历史，用于后续报告和统计分析。加入其他测试功能后可将此模块移至公共模块
+    用例执行结果报告，用于后续报告和统计分析。加入其他测试功能后可将此模块移至公共模块
     """
     # task = models.ForeignKey(Task)
-    case = models.ForeignKey(Case)
     version = models.CharField(max_length=30, blank=True)
-    run_status = models.SmallIntegerField(default=0, choices=RUN_STATUS)
-    fail_reason = models.TextField(max_length=30, blank=True)
-    detail = models.TextField(blank=True)  # 用例运行详情，如果是单一接口测试，以json格式记录请求和返回，如果是接口组，则分别记录
-    replay_time = models.DateTimeField(auto_now_add=True)
+    start_time = models.DateTimeField(blank=True)
+    duration = models.DurationField(blank=True)
+    total = models.PositiveSmallIntegerField(blank=True)
+    pass_count = models.PositiveSmallIntegerField(blank=True)
+    fail_count = models.PositiveSmallIntegerField(blank=True)
+    error_count = models.PositiveSmallIntegerField(blank=True)
+    path = models.CharField(max_length=50, blank=True)
 
     def __str__(self):
-        return '[%s] [%s] [%s] [%s]' % (self.version, self.case.name,
-                                        self.replay_time.strftime('%Y-%m-%d %H:%M:%S'), RUN_STATUS[self.run_status][1],)
+        return self.name
 
     class Meta:
-        verbose_name = 'Replay Log'
+        verbose_name = 'Report'
         verbose_name_plural = verbose_name
 
 # class PICTScript(models.Model):

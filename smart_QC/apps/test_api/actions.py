@@ -23,7 +23,11 @@ from models import TestEnvironment
 from tasks import run_case
 import json
 import time
+# import the logging library
+import logging
 
+# Get an instance of a logger
+logger = logging.getLogger('custom')
 
 class FailCase(BaseActionView):
     action_name = "fail_case"    #: 相当于这个 Action 的唯一标示, 尽量用比较针对性的名字
@@ -146,26 +150,9 @@ class BatchCopyAction(BaseActionView):
         unique_tag = '_copy' + str(time.time())[-5:].replace('.', '')
         # queryset 是包含了已经选择的数据的 queryset
         for entry in queryset:
-
-            # old_hosts = entry.hosts.all()
-            # entry.pk = None
-            # entry.id = None
-            # entry.save()
-            # entry.hosts.set(old_hosts)
-            # def get_m2m(entry, feild_name):
-            #     return entry._meta.get_field(feild_name).trough.all()
-            #
-            # print(get_m2m(entry, 'invoke_cases'))
-            # print(entry.invoke_cases.all())
-            # print(entry.invoke_cases, type(entry.invoke_cases))
-            # print(entry.tag, type(entry.tag))
-            # print(entry.setup.all())
-            old_m2m = []
             old_m2m_entries = []
             for feild_name in m2m_field_names:
-                old_m2m.append(eval("entry.%s" % (feild_name)))
                 old_m2m_entries.append(eval("entry.%s.all()" % (feild_name)))
-            print(old_m2m, old_m2m_entries)
             entry.pk = None
             entry.id = None
             for feild_name in unique_field_names:
@@ -176,11 +163,7 @@ try:
 except TypeError as e:
     raise ValidationError('Update %s failed' + str(e))""" % (feild_name, feild_name, feild_name))
             entry.save()
-            for i in range(0, len(old_m2m)):
-                # print(old_m2m[i])
-                exec('old_m2m[i].set(old_m2m_entries[i])')
-                print(old_m2m[i], old_m2m_entries[i])
-            # old_m2m_entries = old_m2m[0].all()
-            # old_m2m[0].set(old_m2m_entries)
-            # eval("entry.%s.set(%s)" % ('invoke_cases', old_m2m[0]))
+            for f in m2m_field_names:
+                index = m2m_field_names.index(f)
+                eval("entry.%s.set(old_m2m_entries[%s])" % (f, index))
 

@@ -11,10 +11,19 @@
 """
 from __future__ import unicode_literals
 from smart_QC.apps.test_api.models import TestHost, Case
+from .report import TestReport, TestResult
 from .variables import Scope, EvalExpression, ConstantStr
 import ast
 import requests
 import json
+from django.conf import settings
+import uuid
+import os
+# import the logging library
+import logging
+
+# Get an instance of a logger
+logger = logging.getLogger('custom')
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -26,12 +35,24 @@ INVOKE_LEVEL = {"from": 1, "current": 1, "to": 3}
 class Runner(object):
     def __init__(self, test_environment, case):
         self.valid_hosts = TestHost.objects.filter(testenvironment__id=test_environment.get('id')).values_list('name',
-                                                                                                          'module')
+                                                                                                               'module')
         self.case_ids = [i.get('id') for i in case]
         self.selected_case = Case.objects.filter(id__in=self.case_ids)
         self.session = requests.Session()
         self.scope = Scope()  # 包括全局、本地和当前
-        self.report = {}  # 测试报告对象，后面会添加model并render
+        self.result = TestResult()
+        # output to a file
+        self.output_name = str(uuid.uuid1()) + '.html'
+        self.output_path = os.path.join(os.path.dirname(settings.STATIC_ROOT), 'test_report/').replace('\\', '/')
+        self.title = 'My api test'
+        self.description = 'This demonstrates the report output by Smart_QC.'
+        fp = open(self.output_path + self.output_name, 'wb')
+        self.report = TestReport(
+            stream=fp,
+            title=self.title,
+            description=self.description
+        )
+        self.result = TestResult()
 
     def run(self):
         selected_case_reordered = self._reorder(self.selected_case, self.case_ids)
@@ -44,10 +65,14 @@ class Runner(object):
                 self._api_group_replay(c)
                 # add replay log, update case status
                 self.scope.clear_temp()  # 清理当前scope
+        self.report.generateReport(self.result)
         return None
 
     def stop(self):
         self.session.close()
+
+    def email_report(self):
+        pass
 
     def _reorder(self, query_set, id_list):
         new_set = []
@@ -136,7 +161,6 @@ class Runner(object):
 
 
 class ScriptStepRunner(object):
-
     def __init__(self, script, scope):
         self.script = script
         self.scope = scope
@@ -157,7 +181,6 @@ class ScriptStepRunner(object):
         self.result[self.variable] = variable_value
         self.scope = evaled.scope
         print("%s evaluate result is: %s %s" % (self.expression, type(variable_value), variable_value))
-
 
     def final_scope(self):
         if self.script.variable:

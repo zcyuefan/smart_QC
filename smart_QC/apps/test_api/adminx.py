@@ -5,12 +5,17 @@ from __future__ import unicode_literals
 import xadmin
 from xadmin import views
 # from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Variable, Assertion
-from .models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Script
+from .models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, Report, Script
 from .forms import CaseAdminForm, ScriptAdminForm
 from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Side, PrependedAppendedText
 from xadmin.plugins.inline import Inline
 from xadmin.plugins.batch import BatchChangeAction
 from .actions import RunCase, FailCase, BatchCopyAction
+# import the logging library
+import logging
+
+# Get an instance of a logger
+logger = logging.getLogger('custom')
 
 
 class TestHostAdmin(object):
@@ -133,12 +138,6 @@ class APITemplateAdmin(object):
     )
 
 
-class ReplayInline(object):
-    model = ReplayLog
-    extra = 1
-    style = 'accordion'
-
-
 class CaseAdmin(object):
     # exclude = []
     # form = CaseAdminForm
@@ -178,7 +177,6 @@ class CaseAdmin(object):
     # ('service_type', xadmin.filters.MultiSelectFieldListFilter)]
 
     list_bookmarks = []
-    inlines = [ReplayInline]
     form_layout = (
         Main(
             Fieldset("Common Fields",
@@ -215,12 +213,12 @@ class CaseAdmin(object):
     )
 
 
-class ReplayLogAdmin(object):
+class ReportAdmin(object):
     # list_display = ('record_module', )
     list_select_related = True
     model_icon = 'fa fa-file'
     reversion_enable = True
-    actions = [BatchCopyAction, ]
+    # actions = [BatchCopyAction, ]
 
 
 class ScriptAdmin(object):
@@ -244,6 +242,6 @@ xadmin.sites.site.register(TestEnvironment, TestEnvironmentAdmin)
 xadmin.sites.site.register(OriginalAPI, OriginalAPIAdmin)
 xadmin.sites.site.register(APITemplate, APITemplateAdmin)
 xadmin.sites.site.register(Case, CaseAdmin)
-xadmin.sites.site.register(ReplayLog, ReplayLogAdmin)
+xadmin.sites.site.register(Report, ReportAdmin)
 xadmin.sites.site.register(CaseTag, CaseTagAdmin)
 xadmin.sites.site.register(Script, ScriptAdmin)

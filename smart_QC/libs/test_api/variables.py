@@ -12,7 +12,11 @@ file doc
 from __future__ import unicode_literals
 from asteval import Interpreter
 import re
+# import the logging library
+import logging
 
+# Get an instance of a logger
+logger = logging.getLogger('custom')
 
 class Scope(object):
     global_ns = {}

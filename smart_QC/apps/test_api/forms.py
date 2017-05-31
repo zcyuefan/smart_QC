@@ -13,7 +13,11 @@ from __future__ import unicode_literals
 from django import forms
 from .models import Case, Script
 from xadmin.plugins.multiselect import SelectMultipleDropdown
+# import the logging library
+import logging
 
+# Get an instance of a logger
+logger = logging.getLogger(__name__)
 
 # Generates a function that sequentially calls the two functions that were
 # passed to it

@@ -12,6 +12,11 @@ celery异步任务
 from __future__ import unicode_literals
 from celery import shared_task
 from smart_QC.libs.test_api import Runner
+# import the logging library
+import logging
+
+# Get an instance of a logger
+logger = logging.getLogger('custom')
 
 @shared_task
 def run_case(test_environment, case):
