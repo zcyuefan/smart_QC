@@ -5,8 +5,8 @@ from __future__ import unicode_literals
 import xadmin
 from xadmin import views
 # from models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, ReplayLog, Variable, Assertion
-from .models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, Report, Script
-from .forms import CaseAdminForm, ScriptAdminForm
+from .models import TestHost, TestEnvironment, CaseTag, OriginalAPI, APITemplate, Case, Report, Step
+from .forms import CaseAdminForm, StepAdminForm
 from xadmin.layout import Main, TabHolder, Tab, Fieldset, Row, Side, PrependedAppendedText
 from xadmin.plugins.inline import Inline
 from xadmin.plugins.batch import BatchChangeAction
@@ -140,7 +140,7 @@ class APITemplateAdmin(object):
 
 class CaseAdmin(object):
     # exclude = []
-    # form = CaseAdminForm
+    form = CaseAdminForm
     def list_display_options(self, instance):  # display list option
         # instance.last_run_status = '1'
         # instance.save()
@@ -148,14 +148,11 @@ class CaseAdmin(object):
                "<i class='fa fa-play-circle fa-lg'></i></a>" % instance.id
     actions = [RunCase, FailCase, BatchChangeAction, BatchCopyAction]
     # batch_fields = [f.name for f in Case._meta.get_fields()]
-    batch_fields = ['template', 'case_type', 'invoke_cases', 'description', 'tag', 'setup', 'method', 'protocol',
-                    'host', 'path', 'request_headers', 'params', 'data', 'teardown']
+    batch_fields = ['template', 'case_type', 'invoke_cases', 'description', 'tag', 'method', 'protocol',
+                    'host', 'path', 'request_headers', 'params', 'data', 'step']
     style_fields = {'invoke_cases': 'sorted_m2m',
                     'tag': 'm2m_dropdown_with_help_text',
-                    'setup': 'sorted_m2m',
-                    'teardown': 'sorted_m2m',
-                    # 'teardown': 'm2m_transfer_with_help_text',
-                    # 'teardown': 'm2m_dropdown_with_help_text',
+                    'step': 'sorted_m2m',
                     }
     list_display_options.short_description = "options"
     list_display_options.allow_tags = True
@@ -191,16 +188,13 @@ class CaseAdmin(object):
                          Tab('About case',
                              'description', 'tag',
                              ),
-                         Tab('Pre Replay',
-                             'setup',
-                             ),
                          Tab('API detail',
                              'method',
                              Row('protocol', 'host', ),
                              'path', 'request_headers', 'params', 'data',
                              ),
-                         Tab('Post Replay',
-                             'teardown'
+                         Tab('Running steps',
+                             'step'
                              ),
                      ),
                      ),
@@ -221,9 +215,9 @@ class ReportAdmin(object):
     # actions = [BatchCopyAction, ]
 
 
-class ScriptAdmin(object):
-    form = ScriptAdminForm
-    base_fields = ['name','variable', 'global_scope', 'modules', 'namespace', 'expression', 'description', 'default_teardown_script', ]
+class StepAdmin(object):
+    form = StepAdminForm
+    base_fields = ['name', 'usage', 'variable', 'global_scope', 'modules', 'namespace', 'expression', 'description', ]
     list_display = base_fields
     list_editable = base_fields
     search_fields = base_fields + ['create_time', 'modify_time',]
@@ -233,7 +227,7 @@ class ScriptAdmin(object):
     reversion_enable = True
     actions = [BatchCopyAction, ]
     form_layout = (
-        Main(Fieldset('', Row('name', 'default_teardown_script'), Row(PrependedAppendedText('variable', '${', '}'), 'global_scope'), Row('modules', 'namespace', ), 'expression',
+        Main(Fieldset('', 'name', 'usage', Row(PrependedAppendedText('variable', '${', '}'), 'global_scope'), Row('modules', 'namespace', ), 'expression',
                       css_class='unsort short_label no_title')),
         Side(Fieldset('', 'description', css_class='unsort short_label no_title')))
 
@@ -244,4 +238,4 @@ xadmin.sites.site.register(APITemplate, APITemplateAdmin)
 xadmin.sites.site.register(Case, CaseAdmin)
 xadmin.sites.site.register(Report, ReportAdmin)
 xadmin.sites.site.register(CaseTag, CaseTagAdmin)
-xadmin.sites.site.register(Script, ScriptAdmin)
+xadmin.sites.site.register(Step, StepAdmin)

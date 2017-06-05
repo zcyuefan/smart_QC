@@ -207,14 +207,39 @@ RUN_STATUS = (
     (3, 'never run'),
 )
 
+STEP_USAGE = (
+    (0, 'Common'),
+    (1, 'Default assertion'),
+    (2, 'Send request'),
+)
 
-class Script(BaseModel):
+class Step(BaseModel):
     """
 
     """
-    default_teardown_script = models.BooleanField(default=False,
-                                                  help_text="Default running script, e.g. assertion 200 response status"
-                                                  )
+    usage = models.PositiveSmallIntegerField(default=0, choices=STEP_USAGE,
+                                             help_text="""Help for particular choice item:
+                                             <table id="id_usage_help" class="tablesorter table table-bordered table-striped table-hover">
+                                                <thead>
+                                                <tr>
+                                                    <th>Your Choice</th>
+                                                    <th>Help</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>Default assertion</td>
+                                                        <td>e.g. assertion 200 response status</td>
+                                                    </tr>
+                                                     <tr>
+                                                        <td>Send the request</td>
+                                                        <td>Send request in case,fields below will be ignored if checked.</br>
+                                                            For this choice, 1 object is enough!
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                               """)
     variable = models.CharField(max_length=70, blank=True, null=True, unique=True, default=None,
                                 help_text="""Variable name to save result returned by
                                         expression evaluation. Syntax: ${variable}""")
@@ -259,41 +284,20 @@ class Script(BaseModel):
         """
         if self.variable == "" or (self.variable is not None and self.variable.strip() == ""):
             self.variable = None
-    #     safe_modules = settings.EVAL_SAFE_MODULES
-    #     # if isinstance(self.modules, unicode):
-    #     #     input_modules = self.modules.replace(' ', '').split(',') if self.modules else []
-    #     # else:
-    #     #     raise ValidationError('modules is not string')
-    #     if isinstance(self.namespace, unicode):
-    #         try:
-    #             ast.literal_eval(self.namespace)
-    #         except Exception as e:
-    #             raise ValidationError('Namespace SyntaxError: ' + str(e))
-    #     else:
-    #         raise ValidationError('namespace is not string')
-    #     # unsafe_modules = list(set(input_modules).difference(set(safe_modules)))
-    #     # if unsafe_modules:
-    #     #     raise ValidationError('Unsafe module(s): %s' % ','.join(unsafe_modules))
-    #     # #
-    #     ns = ast.literal_eval(self.namespace)
-    #     a={"ee":2222,"gg":33}
-    #     # ns.update((m, __import__(m)) for m in input_modules if m)
-    #     # print(ns)
-    #     # ns.update(a)
-    #     # print(ns)
-    #     # from asteval import Interpreter
-    #     # aeval = Interpreter()
-    #     # aeval.symtable.update(ns)
-    #     # b=aeval('random.randint(1,ee)')
-    #     # print(b)
+        if self.usage == 2 and self.name != 'send_request':
+            raise ValidationError('Send request must named as "send_request"!')
+        if self.usage != 2 and self.name == 'send_request':
+            raise ValidationError('Step name "send_request" is not allowed for none-send_request usage!')
+
 
     class Meta:
-        verbose_name = 'Script'
+        verbose_name = 'Step'
         verbose_name_plural = verbose_name + 's'
 
 
-def get_default_script():
-    return Script.objects.filter(default_teardown_script=True)
+def get_default_step():
+    # resultquery = (models.Q(default_assertion=True) | models.Q(field1='val12'))
+    return Step.objects.filter(usage__in=[2, 1])
 
 
 class Case(BaseModel, RequestModel):
@@ -310,11 +314,9 @@ class Case(BaseModel, RequestModel):
     template = models.ForeignKey(APITemplate, blank=True, null=True)
     tag = models.ManyToManyField(CaseTag, blank=True)
     # params,request_headers,data,setup,teardown支持参数化
-    setup = SortedManyToManyField(Script, blank=True, related_name="setup_set",
-                                  help_text='Scripts running before sending the request, e.g. set variable, prepare test environment.')
-    teardown = SortedManyToManyField(Script, blank=True, related_name="teardown_set",
-                                     default=get_default_script,
-                                     help_text='Scripts running after request sent, e.g. set global variable, asserting, clear test environment')
+    step = SortedManyToManyField(Step, blank=True,
+                                 default=get_default_step,
+                                 help_text='')
     last_run_status = models.SmallIntegerField(default=3, choices=RUN_STATUS)
 
     # def __init__(self, *args, **kwargs):

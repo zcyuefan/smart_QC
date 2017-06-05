@@ -15,7 +15,7 @@ from .report import TestReport, TestResult
 from .variables import Scope, EvalExpression, ConstantStr
 import ast
 import requests
-import json
+# import json
 from django.conf import settings
 import uuid
 import os
@@ -40,7 +40,6 @@ class Runner(object):
         self.selected_case = Case.objects.filter(id__in=self.case_ids)
         self.session = requests.Session()
         self.scope = Scope()  # 包括全局、本地和当前
-        self.result = TestResult()
         # output to a file
         self.output_name = str(uuid.uuid1()) + '.html'
         self.output_path = os.path.join(os.path.dirname(settings.STATIC_ROOT), 'test_report/').replace('\\', '/')
@@ -65,7 +64,8 @@ class Runner(object):
                 self._api_group_replay(c)
                 # add replay log, update case status
                 self.scope.clear_temp()  # 清理当前scope
-        self.report.generateReport(self.result)
+            self.result.add_result()
+        self.report.generateReport(self.result.result)
         return None
 
     def stop(self):
@@ -91,27 +91,27 @@ class Runner(object):
         INVOKE_LEVEL["current"] = INVOKE_LEVEL["from"]
         print('invoke _single_api_replay %s %s' % (INVOKE_LEVEL["current"], case.id))
         # run setup
-        setup_scripts = case.setup.all()
-        teardown_scripts = case.teardown.all()
-        for setup_step in setup_scripts:
-            setup_step_runner = ScriptStepRunner(setup_step, self.scope)
-            setup_step_runner.run()
-            self.scope = setup_step_runner.final_scope()
-        # pre request
-        request_parser = RequestParser(case, self.scope, self.valid_hosts)
-        request_parser.parse_all()
-        request_params = request_parser.final_params
-        print(request_params)
-        # send request
-        req = requests.Request(**request_params).prepare()
-        res = self.session.send(req, verify=False)
-        self.scope.update('current_ns', {'response': res})  # 将运行结果插入
+        steps = case.step.all()
+        for step in steps:
+            self.result.current_case.start_step()
+            if step.usage == 2:  # run "send_request" step
+                # pre request
+                request_parser = RequestParser(case, self.scope, self.valid_hosts)
+                request_parser.parse_all()
+                request_params = request_parser.final_params
+                logger.info('request_params: %s' % request_params)
+                # send request
+                req = requests.Request(**request_params).prepare()
+                res = self.session.send(req, verify=False)
+                self.scope.update('current_ns', {'response': res})  # 将运行结果插入
+            else:  # run other step
+                step_runner = StepRunner(steps, self.scope)
+                step_runner.run()
+                self.scope = step_runner.final_scope()
+                self.result.current_case.add_success() #
+            self.result.current_case.stop_step()
+
         # run teardown
-        for teardown_step in teardown_scripts:
-            teardown_step_runner = ScriptStepRunner(teardown_step, self.scope)
-            teardown_step_runner.run()
-            self.scope = teardown_step_runner.final_scope()
-        print(type(res), res)
         # # pre request: prepare request params, running setup
         # send_host = case.host.name
         # for host_tuple in self.valid_hosts:
@@ -160,7 +160,7 @@ class Runner(object):
                 continue
 
 
-class ScriptStepRunner(object):
+class StepRunner(object):
     def __init__(self, script, scope):
         self.script = script
         self.scope = scope

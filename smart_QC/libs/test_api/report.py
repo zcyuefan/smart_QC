@@ -222,45 +222,63 @@ function showCase(level) {
 }
 
 
-function showClassDetail(cid, count) {
-    var id_list = Array(count);
+function showClassDetail(cid){
     var toHide = 1;
-    for (var i = 0; i < count; i++) {
-        tid0 = 't' + cid.substr(1) + '.' + (i+1);
-        tid = 'f' + tid0;
-        tr = document.getElementById(tid);
-        if (!tr) {
-            tid = 'p' + tid0;
-            tr = document.getElementById(tid);
-        }
-        id_list[i] = tid;
-        if (tr.className) {
+    var tr = document.evaluate("//tr[contains(@id,'"+'t' + cid.substr(1) + '.'+"')]", document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    if (tr){
+        if (tr.snapshotItem(0).className) {
             toHide = 0;
         }
-    }
-    for (var i = 0; i < count; i++) {
-        tid = id_list[i];
+        for (var i=0, len=tr.snapshotLength; i < len; i++) {
+        tid=tr.snapshotItem(i).id;
+        //alert(tid);
         if (toHide) {
+            if(document.getElementById('div_'+tid)){
             document.getElementById('div_'+tid).style.display = 'none'
+            }
             document.getElementById(tid).className = 'hiddenRow';
         }
         else {
             document.getElementById(tid).className = '';
         }
+        }
     }
 }
 
 
-function showTestDetail(div_id){
-    var details_div = document.getElementById(div_id)
-    var displayState = details_div.style.display
+function showTestDetail(tid){
+    var toHide = 1;
+    var test_step = document.evaluate("//tr[starts-with(@id,'"+tid+".')]", document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    if (test_step){
+        if (test_step.snapshotItem(0).className) {
+            toHide = 0;
+        }
+        for (var i=0, len=test_step.snapshotLength; i < len; i++) {
+        sid=test_step.snapshotItem(i).id;
+        if (toHide) {
+            if(document.getElementById('div_'+tid)){
+            document.getElementById('div_'+tid).style.display = 'none'
+            }
+            document.getElementById(sid).className = 'hiddenRow';
+        }
+        else {
+            document.getElementById(sid).className = '';
+        }
+        }
+    }
+}
+
+
+function showStepDetail(div_id){
+    var details_div = document.getElementById(div_id);
+    var displayState = details_div.style.display;
     // alert(displayState)
     if (displayState != 'block' ) {
-        displayState = 'block'
-        details_div.style.display = 'block'
+        displayState = 'block';
+        details_div.style.display = 'block';
     }
     else {
-        details_div.style.display = 'none'
+        details_div.style.display = 'none';
     }
 }
 
@@ -410,19 +428,31 @@ function showOutput(id, name) {
 """ # variables: (style, desc, count, Pass, fail, error, cid)
 
 
-    REPORT_TEST_WITH_OUTPUT_TMPL = r"""
+    REPORT_TEST_TMPL = r"""
 <tr id='%(tid)s' class='%(Class)s'>
-    <td class='%(style)s'><div class='testcase'>%(desc)s</div></td>
+    <td class='%(style)s' onclick="javascript:showTestDetail('%(tid)s')" style="cursor:pointer;"><div class='testcase'>%(desc)s</div></td>
     <td colspan='5' align='center'>
 
     <!--css div popup start-->
-    <a class="popup_link btn btn-xs %(btn_class)s" onfocus='this.blur();' href="javascript:showTestDetail('div_%(tid)s')" >
+    <a class="btn btn-xs %(btn_class)s" >
+        %(status)s</a>
+    <!--css div popup end-->
+
+    </td>
+</tr>
+""" # variables: (tid, Class, btn_class, style, desc, status)
+
+    REPORT_STEP_TMPL = r"""
+<tr id='%(tid)s' class='%(Class)s'>
+    <td class='%(style)s' onclick="javascript:showStepDetail('div_%(tid)s')" style="cursor:pointer;"><div class='testcase'>%(desc)s</div></td>
+    <td colspan='5' align='center'>
+
+    <!--css div popup start-->
+    <a class="btn btn-xs %(btn_class)s" >
         %(status)s</a>
 
     <div id='div_%(tid)s' class="popup_window">
         <div style='text-align: right;cursor:pointer'>
-        <a onfocus='this.blur();' onclick="document.getElementById('div_%(tid)s').style.display = 'none' " >
-           [x]</a>
         </div>
         <pre>
         %(script)s
@@ -434,13 +464,12 @@ function showOutput(id, name) {
 </tr>
 """ # variables: (tid, Class, btn_class, style, desc, status)
 
-
-    REPORT_TEST_NO_OUTPUT_TMPL = r"""
-<tr id='%(tid)s' class='%(Class)s'>
-    <td class='%(style)s'><div class='testcase'>%(desc)s</div></td>
-    <td colspan='5' align='center'>%(status)s</td>
-</tr>
-""" # variables: (tid, Class, style, desc, status)
+#     REPORT_TEST_NO_OUTPUT_TMPL = r"""
+# <tr id='%(tid)s' class='%(Class)s'>
+#     <td class='%(style)s'><div class='testcase'>%(desc)s</div></td>
+#     <td colspan='5' align='center'>%(status)s</td>
+# </tr>
+# """ # variables: (tid, Class, style, desc, status)
 
 
     REPORT_TEST_OUTPUT_TMPL = r"""
@@ -462,33 +491,55 @@ STDERR_LINE = '\nStderr:\n%s'
 
 
 class TestResult(object):
-    # note: _TestResult is a pure representation of results.
-    # It lacks the output and reporting ability compares to unittest._TextTestResult.
 
-    def __init__(self, verbosity=1):
-        # TestResult.__init__(self)
-        self.outputBuffer = StringIO.StringIO()
-        self.stdout0 = None
-        self.stderr0 = None
+    def __init__(self):
         self.success_count = 0
         self.failure_count = 0
         self.error_count = 0
+        self.current_case = CaseResult()
+
+        # result is a list of result in 2 tuple
+        # (
+        #   result code (0: success; 1: fail; 2: error),
+        #   CaseResult object,
+        # )
+        self.result = []
+
+    def add_result(self):
+        if self.current_case.status == 0:
+            self.success_count += 1
+            self.result.append((0, self.current_case))
+        elif self.current_case.status == 1:
+            self.failure_count += 1
+            self.result.append((1, self.current_case))
+        elif self.current_case.status == 1:
+            self.error_count += 1
+            self.result.append((2, self.current_case))
+        else:
+            pass
+
+
+class CaseResult(object):
+    def __init__(self, verbosity=1):
+        self.outputBuffer = StringIO.StringIO()
+        self.stdout0 = None
+        self.stderr0 = None
         self.verbosity = verbosity
-        self.failures = []
-        self.errors = []
         self.buffer = False
+        self.errors = []
+        self.failures = []
+        self.status = 4  # not run
 
         # result is a list of result in 4 tuple
         # (
         #   result code (0: success; 1: fail; 2: error),
-        #   TestCase object,
+        #   Step object,
         #   Test output (byte string),
         #   stack trace,
         # )
         self.result = []
 
-    def startTest(self, test):
-        # TestResult.startTest(self, test)
+    def start_step(self):
         # just one buffer for both stdout and stderr
         stdout_redirector.fp = self.outputBuffer
         stderr_redirector.fp = self.outputBuffer
@@ -509,60 +560,56 @@ class TestResult(object):
             self.stderr0 = None
         return self.outputBuffer.getvalue()
 
-    def stopTest(self, test):
-        # Usually one of addSuccess, addError or addFailure would have been called.
-        # But there are some path in unittest that would bypass this.
-        # We must disconnect stdout in stopTest(), which is guaranteed to be called.
+    def stop_step(self):
         self.complete_output()
 
-    def addSuccess(self, test):
-        self.success_count += 1
-        # TestResult.addSuccess(self, test)
-        output = self.complete_output()
-        self.result.append((0, test, output, ''))
+    def add_success(self, step, output):
+        output += self.complete_output()
+        self.result.append((0, step, output, ''))
+        if self.status == 4:
+            self.status = 0
         if self.verbosity > 1:
             sys.stderr.write('ok ')
-            sys.stderr.write(str(test))
+            sys.stderr.write(str(step))
             sys.stderr.write('\n')
         else:
             sys.stderr.write('.')
 
-    def addError(self, test, err):
-        self.error_count += 1
-        # TestResult.addError(self, test, err)
-        self.errors.append((test, self._exc_info_to_string(err, test)))
+    def add_error(self, step, err):
+        self.errors.append((step, self._exc_info_to_string(err, step)))
         _, _exc_str = self.errors[-1]
         output = self.complete_output()
-        self.result.append((2, test, output, _exc_str))
+        self.result.append((2, step, output, _exc_str))
+        self.status = 2
         if self.verbosity > 1:
             sys.stderr.write('E  ')
-            sys.stderr.write(str(test))
+            sys.stderr.write(str(step))
             sys.stderr.write('\n')
         else:
             sys.stderr.write('E')
 
-    def addFailure(self, test, err):
-        self.failure_count += 1
-        # TestResult.addFailure(self, test, err)
-        self.failures.append((test, self._exc_info_to_string(err, test)))
+    def add_failure(self, step, err):
+        self.failures.append((step, self._exc_info_to_string(err, step)))
         _, _exc_str = self.failures[-1]
         output = self.complete_output()
-        self.result.append((1, test, output, _exc_str))
+        self.result.append((1, step, output, _exc_str))
+        if self.status in (0, 4):
+            self.status = 1
         if self.verbosity > 1:
             sys.stderr.write('F  ')
-            sys.stderr.write(str(test))
+            sys.stderr.write(str(step))
             sys.stderr.write('\n')
         else:
             sys.stderr.write('F')
 
-    def _exc_info_to_string(self, err, test):
+    def _exc_info_to_string(self, err, step):
         """Converts a sys.exc_info()-style tuple of values into a string."""
         exctype, value, tb = err
         # Skip test runner traceback levels
         while tb and self._is_relevant_tb_level(tb):
             tb = tb.tb_next
 
-        if exctype is test.failureException:
+        if exctype is step.failureException:
             # Skip assert*() traceback levels
             length = self._count_relevant_tb_levels(tb)
             msgLines = traceback.format_exception(exctype, value, tb, length)
@@ -623,19 +670,19 @@ class TestReport(Template_mixin):
     #     print >> sys.stderr, '\nTime Elapsed: %s' % (self.stopTime - self.startTime)
     #     return result
 
-    def sortResult(self, result_list):
-        # unittest does not seems to run in any particular order.
-        # Here at least we want to group them together by class.
-        rmap = {}
-        classes = []
-        for n, t, o, e in result_list:
-            cls = t.__class__
-            if not rmap.has_key(cls):
-                rmap[cls] = []
-                classes.append(cls)
-            rmap[cls].append((n, t, o, e))
-        r = [(cls, rmap[cls]) for cls in classes]
-        return r
+    # def sortResult(self, result_list):
+    #     # unittest does not seems to run in any particular order.
+    #     # Here at least we want to group them together by class.
+    #     rmap = {}
+    #     classes = []
+    #     for n, t, o, e in result_list:
+    #         cls = t.__class__
+    #         if not rmap.has_key(cls):
+    #             rmap[cls] = []
+    #             classes.append(cls)
+    #         rmap[cls].append((n, t, o, e))
+    #     r = [(cls, rmap[cls]) for cls in classes]
+    #     return r
 
     def getReportAttributes(self, result):
         """
@@ -747,6 +794,47 @@ class TestReport(Template_mixin):
 
     def _generate_report_test(self, rows, cid, tid, n, t, o, e):
         # e.g. 'pt1.1', 'ft1.1', etc
+        tid = (n == 0 and 'p' or 'f') + 't%s.%s' % (cid + 1, tid + 1)
+        name = t.id().split('.')[-1]
+        doc = t.shortDescription() or ""
+        desc = doc and ('%s: %s' % (name, doc)) or name
+
+        # o and e should be byte string because they are collected from stdout and stderr?
+        if isinstance(o, str):
+            # TODO: some problem with 'string_escape': it escape \n and mess up formating
+            # uo = unicode(o.encode('string_escape'))
+            uo = o.decode('latin-1')
+        else:
+            uo = o
+        if isinstance(e, str):
+            # TODO: some problem with 'string_escape': it escape \n and mess up formating
+            # ue = unicode(e.encode('string_escape'))
+            ue = e.decode('latin-1')
+        else:
+            ue = e
+
+        script = self.REPORT_TEST_OUTPUT_TMPL % dict(
+            id=tid,
+            output=saxutils.escape(uo + ue),
+        )
+
+        row = self.REPORT_TEST_TMPL % dict(
+            tid=tid,
+            # Class = (n == 0 and 'hiddenRow' or 'none'),
+            Class=(n == 0 and 'hiddenRow' or 'text text-success'),
+            btn_class=n == 2 and 'btn-danger' or (n == 1 and 'btn-warning' or 'btn-success'),
+            # style = n == 2 and 'errorCase' or (n == 1 and 'failCase' or 'none'),
+            style=n == 2 and 'text text-warning' or (n == 1 and 'text text-danger' or 'text text-success'),
+            desc=desc,
+            script=script,
+            status=self.STATUS[n],
+        )
+        rows.append(row)
+        for sid, (n, t, o, e) in enumerate(step_results):
+            self._generate_report_step(rows, cid, tid, sid, n, t, o, e)
+
+    def _generate_report_step(self, rows, cid, tid, n, t, o, e):
+        # e.g. 'pt1.1', 'ft1.1', etc
         has_output = bool(o or e)
         tid = (n == 0 and 'p' or 'f') + 't%s.%s' % (cid + 1, tid + 1)
         name = t.id().split('.')[-1]
@@ -787,9 +875,6 @@ class TestReport(Template_mixin):
         rows.append(row)
         if not has_output:
             return
-
-    def _generate_report_step:
-        pass
 
     def _generate_ending(self):
         return self.ENDING_TMPL

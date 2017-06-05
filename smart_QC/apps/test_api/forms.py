@@ -11,7 +11,8 @@ file doc
 """
 from __future__ import unicode_literals
 from django import forms
-from .models import Case, Script
+from django.core.exceptions import ValidationError
+from .models import Case,Step
 from xadmin.plugins.multiselect import SelectMultipleDropdown
 # import the logging library
 import logging
@@ -38,9 +39,9 @@ logger = logging.getLogger(__name__)
 #     widget = OrderedManyToManyWidget()
 
 
-class ScriptAdminForm(forms.ModelForm):
+class StepAdminForm(forms.ModelForm):
     class Meta:
-        model = Script
+        model = Step
         widgets = {
             # 'modules': forms.CheckboxSelectMultiple,
             'modules': SelectMultipleDropdown,
@@ -54,14 +55,11 @@ class CaseAdminForm(forms.ModelForm):
 
     class Meta:
         model = Case
-        teardown = Script.objects.filter(default_teardown_script=True)
-        # model.teardown = Script.objects.filter(default_teardown_script=True)
-        # if not model.pk:
-        #     model.teardown = Script.objects.filter(default_teardown_script=True)
         exclude = []
 
-    # def clean(self):
-    #     print(self.cleaned_data)
+    def clean(self):
+        if self.cleaned_data.get('case_type') == 0 and 2 not in [step.usage for step in self.cleaned_data.get('step')]:
+            raise ValidationError('Single API case must contains "send_request" in running steps!')
 
     # Override init so we can populate the form field with the existing data.
     # def __init__(self, *args, **kwargs):
