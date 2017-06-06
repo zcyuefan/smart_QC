@@ -16,6 +16,11 @@ import sys
 import time
 import unittest
 from xml.sax import saxutils
+# import the logging library
+import logging
+
+# Get an instance of a logger
+logger = logging.getLogger(__name__)
 """
 A TestRunner for use with the Python unit testing framework. It generates a HTML report to show the result at a glance.
 
@@ -356,7 +361,7 @@ function showOutput(id, name) {
 #total_row  { font-weight: bold; }
 .hiddenRow  { display: none; }
 .testcase   { margin-left: 2em; }
-
+.teststep   { margin-left: 4em; }
 </style>
 """
 
@@ -423,7 +428,7 @@ function showOutput(id, name) {
     <td>%(Pass)s</td>
     <td>%(fail)s</td>
     <td>%(error)s</td>
-    <td><a class="btn btn-xs btn-primary"href="javascript:showClassDetail('%(cid)s',%(count)s)">Detail</a></td>
+    <td><a class="btn btn-xs btn-primary"href="javascript:showClassDetail('%(cid)s')">Detail</a></td>
 </tr>
 """ # variables: (style, desc, count, Pass, fail, error, cid)
 
@@ -443,15 +448,15 @@ function showOutput(id, name) {
 """ # variables: (tid, Class, btn_class, style, desc, status)
 
     REPORT_STEP_TMPL = r"""
-<tr id='%(tid)s' class='%(Class)s'>
-    <td class='%(style)s' onclick="javascript:showStepDetail('div_%(tid)s')" style="cursor:pointer;"><div class='testcase'>%(desc)s</div></td>
+<tr id='%(sid)s' class='%(Class)s'>
+    <td class='%(style)s' onclick="javascript:showStepDetail('div_%(sid)s')" style="cursor:pointer;"><div class='teststep'>%(desc)s</div></td>
     <td colspan='5' align='center'>
 
     <!--css div popup start-->
     <a class="btn btn-xs %(btn_class)s" >
         %(status)s</a>
 
-    <div id='div_%(tid)s' class="popup_window">
+    <div id='div_%(sid)s' class="popup_window">
         <div style='text-align: right;cursor:pointer'>
         </div>
         <pre>
@@ -462,7 +467,7 @@ function showOutput(id, name) {
 
     </td>
 </tr>
-""" # variables: (tid, Class, btn_class, style, desc, status)
+""" # variables: (sid, Class, btn_class, style, desc, status)
 
 #     REPORT_TEST_NO_OUTPUT_TMPL = r"""
 # <tr id='%(tid)s' class='%(Class)s'>
@@ -496,7 +501,7 @@ class TestResult(object):
         self.success_count = 0
         self.failure_count = 0
         self.error_count = 0
-        self.current_case = CaseResult()
+        self.current_case = None
 
         # result is a list of result in 2 tuple
         # (
@@ -504,6 +509,9 @@ class TestResult(object):
         #   CaseResult object,
         # )
         self.result = []
+
+    def start_case(self):
+        self.current_case = CaseResult()
 
     def add_result(self):
         if self.current_case.status == 0:
@@ -516,7 +524,7 @@ class TestResult(object):
             self.error_count += 1
             self.result.append((2, self.current_case))
         else:
-            pass
+            print("case status is" + str(self.current_case.status))
 
 
 class CaseResult(object):
@@ -748,40 +756,24 @@ class TestReport(Template_mixin):
 
     def _generate_report(self, result):
         rows = []
-        # sortedResult = self.sortResult(result.result)
-        # for cid, (cls, cls_results) in enumerate(sortedResult):
-        for cid, (cls, cls_results) in enumerate(result.result):
-            # subtotal for a class
-            np = nf = ne = 0
-            for n, t, o, e in cls_results:
-                if n == 0:
-                    np += 1
-                elif n == 1:
-                    nf += 1
-                else:
-                    ne += 1
-
-            # format class description
-            if cls.__module__ == "__main__":
-                name = cls.__name__
-            else:
-                name = "%s.%s" % (cls.__module__, cls.__name__)
-            doc = cls.__doc__ and cls.__doc__.split("\n")[0] or ""
-            desc = doc and '%s: %s' % (name, doc) or name
-
-            row = self.REPORT_CLASS_TMPL % dict(
-                style=ne > 0 and 'text text-warning' or nf > 0 and 'text text-danger' or 'text text-success',
-                desc=desc,
-                count=np + nf + ne,
-                Pass=np,
-                fail=nf,
-                error=ne,
-                cid='c%s' % (cid + 1),
-            )
-            rows.append(row)
-
-            for tid, (n, t, o, e) in enumerate(cls_results):
-                self._generate_report_test(rows, cid, tid, n, t, o, e)
+        # # format class description
+        # # name = "%s.%s" % (cls.__module__, cls.__name__)
+        name = "Api test suite xxx"
+        doc = "HAHA"
+        desc = doc and '%s: %s' % (name, doc) or name
+        cid = 0
+        row = self.REPORT_CLASS_TMPL % dict(
+            style=result.error_count > 0 and 'text text-warning' or result.failure_count > 0 and 'text text-danger' or 'text text-success',
+            desc=desc,
+            count=str(result.success_count + result.failure_count + result.error_count),
+            Pass=str(result.success_count),
+            fail=str(result.failure_count),
+            error=str(result.error_count),
+            cid='c%s' % (cid+1),
+        )
+        rows.append(row)
+        for tid, (test_code, test) in enumerate(result.result):
+            self._generate_report_test(rows, cid, tid, test_code, test)
 
         report = self.REPORT_TMPL % dict(
             test_list=''.join(rows),
@@ -792,31 +784,14 @@ class TestReport(Template_mixin):
         )
         return report
 
-    def _generate_report_test(self, rows, cid, tid, n, t, o, e):
+    def _generate_report_test(self, rows, cid, tid, n, t):
         # e.g. 'pt1.1', 'ft1.1', etc
         tid = (n == 0 and 'p' or 'f') + 't%s.%s' % (cid + 1, tid + 1)
-        name = t.id().split('.')[-1]
-        doc = t.shortDescription() or ""
+        # name = t.id().split('.')[-1]
+        # doc = t.shortDescription() or ""
+        name = "tttt"
+        doc = "TTTT"
         desc = doc and ('%s: %s' % (name, doc)) or name
-
-        # o and e should be byte string because they are collected from stdout and stderr?
-        if isinstance(o, str):
-            # TODO: some problem with 'string_escape': it escape \n and mess up formating
-            # uo = unicode(o.encode('string_escape'))
-            uo = o.decode('latin-1')
-        else:
-            uo = o
-        if isinstance(e, str):
-            # TODO: some problem with 'string_escape': it escape \n and mess up formating
-            # ue = unicode(e.encode('string_escape'))
-            ue = e.decode('latin-1')
-        else:
-            ue = e
-
-        script = self.REPORT_TEST_OUTPUT_TMPL % dict(
-            id=tid,
-            output=saxutils.escape(uo + ue),
-        )
 
         row = self.REPORT_TEST_TMPL % dict(
             tid=tid,
@@ -826,21 +801,20 @@ class TestReport(Template_mixin):
             # style = n == 2 and 'errorCase' or (n == 1 and 'failCase' or 'none'),
             style=n == 2 and 'text text-warning' or (n == 1 and 'text text-danger' or 'text text-success'),
             desc=desc,
-            script=script,
             status=self.STATUS[n],
         )
         rows.append(row)
-        for sid, (n, t, o, e) in enumerate(step_results):
-            self._generate_report_step(rows, cid, tid, sid, n, t, o, e)
+        for sid, (n, s, o, e) in enumerate(t.result):
+            self._generate_report_step(rows, tid, sid, n, s, o, e)
 
-    def _generate_report_step(self, rows, cid, tid, n, t, o, e):
-        # e.g. 'pt1.1', 'ft1.1', etc
-        has_output = bool(o or e)
-        tid = (n == 0 and 'p' or 'f') + 't%s.%s' % (cid + 1, tid + 1)
-        name = t.id().split('.')[-1]
-        doc = t.shortDescription() or ""
+    def _generate_report_step(self, rows, tid, sid, n, t, o, e):
+        # e.g. 'pt1.1.1', 'ft1.1.1', etc
+        sid = '%s.%s' % (tid, sid + 1)
+        # name = t.id().split('.')[-1]
+        # doc = t.shortDescription() or ""
+        name = "step hh"
+        doc = "000xxxx"
         desc = doc and ('%s: %s' % (name, doc)) or name
-        tmpl = has_output and self.REPORT_TEST_WITH_OUTPUT_TMPL or self.REPORT_TEST_NO_OUTPUT_TMPL
 
         # o and e should be byte string because they are collected from stdout and stderr?
         if isinstance(o, str):
@@ -857,24 +831,20 @@ class TestReport(Template_mixin):
             ue = e
 
         script = self.REPORT_TEST_OUTPUT_TMPL % dict(
-            id=tid,
+            id=sid,
             output=saxutils.escape(uo + ue),
         )
 
-        row = tmpl % dict(
-            tid=tid,
-            # Class = (n == 0 and 'hiddenRow' or 'none'),
+        row = self.REPORT_STEP_TMPL % dict(
+            sid=sid,
             Class=(n == 0 and 'hiddenRow' or 'text text-success'),
             btn_class=n == 2 and 'btn-danger' or (n == 1 and 'btn-warning' or 'btn-success'),
-            # style = n == 2 and 'errorCase' or (n == 1 and 'failCase' or 'none'),
             style=n == 2 and 'text text-warning' or (n == 1 and 'text text-danger' or 'text text-success'),
             desc=desc,
             script=script,
             status=self.STATUS[n],
         )
         rows.append(row)
-        if not has_output:
-            return
 
     def _generate_ending(self):
         return self.ENDING_TMPL

@@ -23,7 +23,7 @@ import os
 import logging
 
 # Get an instance of a logger
-logger = logging.getLogger('custom')
+logger = logging.getLogger(__name__)
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -56,6 +56,7 @@ class Runner(object):
     def run(self):
         selected_case_reordered = self._reorder(self.selected_case, self.case_ids)
         for c in selected_case_reordered:
+            self.result.start_case()
             if c.case_type == 0:  # Single API
                 self._single_api_replay(c)
                 # add replay log, update case status
@@ -65,7 +66,8 @@ class Runner(object):
                 # add replay log, update case status
                 self.scope.clear_temp()  # 清理当前scope
             self.result.add_result()
-        self.report.generateReport(self.result.result)
+        self.report.generateReport(self.result)
+        logger.info("Report generated:%s" % (self.output_path + self.output_name))
         return None
 
     def stop(self):
@@ -89,7 +91,7 @@ class Runner(object):
     def _single_api_replay(self, case):
         # 替换host, 运行参数化，运行setup, 发起request，断言，添加或修改参数，运行teardown
         INVOKE_LEVEL["current"] = INVOKE_LEVEL["from"]
-        print('invoke _single_api_replay %s %s' % (INVOKE_LEVEL["current"], case.id))
+        logger.info('invoke _single_api_replay %s %s' % (INVOKE_LEVEL["current"], case.id))
         # run setup
         steps = case.step.all()
         for step in steps:
@@ -104,46 +106,47 @@ class Runner(object):
                 req = requests.Request(**request_params).prepare()
                 res = self.session.send(req, verify=False)
                 self.scope.update('current_ns', {'response': res})  # 将运行结果插入
+                self.result.current_case.add_success(step.name, '22222')  #
             else:  # run other step
-                step_runner = StepRunner(steps, self.scope)
+                step_runner = StepRunner(step, self.scope)
                 step_runner.run()
                 self.scope = step_runner.final_scope()
-                self.result.current_case.add_success() #
+                self.result.current_case.add_success(step.name, '22222')  #
             self.result.current_case.stop_step()
 
-        # run teardown
-        # # pre request: prepare request params, running setup
-        # send_host = case.host.name
-        # for host_tuple in self.valid_hosts:
-        #     if case.host.module == host_tuple[1]:
-        #         send_host = host_tuple[0]
-        #         break
-        # send_url = case.protocol + '://' + send_host + case.path
-        # send_headers = case.request_headers if case.request_headers else None
-        # send_data = case.data if case.data else None
-        # send_params = case.params if case.params else None
-        # # print(send_url, type(send_url))
-        # # print(send_data, type(send_data))
-        # # print(send_params, type(send_params))
-        #
-        # # send request
-        # req = requests.Request(method=case.method, url=send_url, headers=send_headers, data=send_data,
-        #                        params=send_params).prepare()
-        # res = self.session.send(req, verify=False)
-        # from robot.libraries.BuiltIn import _Misc
-        # a = _Misc()
-        # ns = {"hh": 4}
-        # # b=a.evaluate('random.randint(0, hh) ', modules='random, sys', namespace=ns)
-        # c = a.evaluate('1 + hh', namespace=ns)
-        # print(c)
-        # # after request: asserting, running teardown, new or update variables
-        # # d=res.content
-        # # import json
-        # # e=json.loads(d)
-        # e = res.json()
-        # print(e.get("resultInfo"))
+            # run teardown
+            # # pre request: prepare request params, running setup
+            # send_host = case.host.name
+            # for host_tuple in self.valid_hosts:
+            #     if case.host.module == host_tuple[1]:
+            #         send_host = host_tuple[0]
+            #         break
+            # send_url = case.protocol + '://' + send_host + case.path
+            # send_headers = case.request_headers if case.request_headers else None
+            # send_data = case.data if case.data else None
+            # send_params = case.params if case.params else None
+            # # print(send_url, type(send_url))
+            # # print(send_data, type(send_data))
+            # # print(send_params, type(send_params))
+            #
+            # # send request
+            # req = requests.Request(method=case.method, url=send_url, headers=send_headers, data=send_data,
+            #                        params=send_params).prepare()
+            # res = self.session.send(req, verify=False)
+            # from robot.libraries.BuiltIn import _Misc
+            # a = _Misc()
+            # ns = {"hh": 4}
+            # # b=a.evaluate('random.randint(0, hh) ', modules='random, sys', namespace=ns)
+            # c = a.evaluate('1 + hh', namespace=ns)
+            # print(c)
+            # # after request: asserting, running teardown, new or update variables
+            # # d=res.content
+            # # import json
+            # # e=json.loads(d)
+            # e = res.json()
+            # print(e.get("resultInfo"))
 
-        # print(res.request.url)
+            # print(res.request.url)
 
     def _api_group_replay(self, case):
         sub_cases = case.invoke_cases.all()
@@ -151,23 +154,23 @@ class Runner(object):
             if c.case_type == 0:  # Single API
                 self._single_api_replay(c)
             elif c.case_type == 1 and INVOKE_LEVEL["current"] <= INVOKE_LEVEL["to"]:  # APIGroup
-                print('invoke _api_group_replay %s %s' % (INVOKE_LEVEL["current"], c.id))
+                logger.info('invoke _api_group_replay %s %s' % (INVOKE_LEVEL["current"], c.id))
                 INVOKE_LEVEL["current"] += 1
                 self._api_group_replay(c)
             else:
-                print('invoke limited %s %s' % (INVOKE_LEVEL["current"], c.id))
+                logger.info('invoke limited %s %s' % (INVOKE_LEVEL["current"], c.id))
                 INVOKE_LEVEL["current"] = INVOKE_LEVEL["from"]
                 continue
 
 
 class StepRunner(object):
-    def __init__(self, script, scope):
-        self.script = script
+    def __init__(self, step, scope):
+        self.step = step
         self.scope = scope
-        self.variable = script.variable
-        self.modules = script.modules
-        self.namespace = ast.literal_eval(script.namespace)
-        self.expression = script.expression
+        self.variable = step.variable
+        self.modules = step.modules
+        self.namespace = ast.literal_eval(step.namespace)
+        self.expression = step.expression
         self.result = {}
 
     def run(self):
@@ -180,11 +183,11 @@ class StepRunner(object):
         variable_value = evaled.evaluate()
         self.result[self.variable] = variable_value
         self.scope = evaled.scope
-        print("%s evaluate result is: %s %s" % (self.expression, type(variable_value), variable_value))
+        logger.info("%s evaluate result is: %s %s" % (self.expression, type(variable_value), variable_value))
 
     def final_scope(self):
-        if self.script.variable:
-            if self.script.global_scope:
+        if self.step.variable:
+            if self.step.global_scope:
                 self.scope.update('global_ns', self.result)  # 加入self.variable，self.variable_ns
             else:
                 self.scope.update('current_ns', self.result)

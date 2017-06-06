@@ -16,7 +16,7 @@ from smart_QC.libs.test_api import Runner
 import logging
 
 # Get an instance of a logger
-logger = logging.getLogger('custom')
+logger = logging.getLogger(__name__)
 
 @shared_task
 def run_case(test_environment, case):

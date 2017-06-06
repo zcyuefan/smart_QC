@@ -15,7 +15,7 @@ from .actions import RunCase, FailCase, BatchCopyAction
 import logging
 
 # Get an instance of a logger
-logger = logging.getLogger('custom')
+logger = logging.getLogger(__name__)
 
 
 class TestHostAdmin(object):

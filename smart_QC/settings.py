@@ -244,7 +244,7 @@ LOGGING = {
             'filters': ['require_debug_false'],  # 仅当 DEBUG = False 时才发送邮件
             'include_html': True,
         },
-        'debug': {  # 记录到日志文件(需要创建对应的目录，否则会出错)
+        'default': {  # 记录到日志文件(需要创建对应的目录，否则会出错)
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, "log", 'debug.log'),  # 日志输出文件
@@ -253,19 +253,20 @@ LOGGING = {
             'formatter': 'standard',  # 使用哪种formatters日志格式
         },
         'console': {  # 输出到控制台
-            'level': 'DEBUG',
+            # 'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'standard',
         },
     },
     'loggers': {  # logging管理器
         'django': {
-            'handlers': ['console'],
+            'handlers': ['default', 'console'],
             'level': 'DEBUG',
             'propagate': False
         },
         'django.request': {
-            'handlers': ['debug', 'mail_admins'],
+            'handlers': ['default', 'mail_admins'],
             'level': 'ERROR',
             'propagate': True,
         },
@@ -274,9 +275,9 @@ LOGGING = {
             'handlers': ['null'],
             'propagate': False,
         },
-        'smart_QC.custom': {
-            'handlers': ['console', 'mail_admins'],
-            'level': 'DEBUG',
+        'smart_QC': {
+            'handlers': ['default', 'console', 'mail_admins'],
+            'level': 'INFO',
             # 'filters': ['special']
         }
     }

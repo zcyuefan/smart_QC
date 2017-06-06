@@ -27,7 +27,7 @@ import time
 import logging
 
 # Get an instance of a logger
-logger = logging.getLogger('custom')
+logger = logging.getLogger(__name__)
 
 class FailCase(BaseActionView):
     action_name = "fail_case"    #: 相当于这个 Action 的唯一标示, 尽量用比较针对性的名字
@@ -72,7 +72,7 @@ class RunCase(BaseActionView):
                                           'error')
                 except Exception:
                     import traceback
-                    print(traceback.format_exc())
+                    logger.error(traceback.format_exc())
                     self.message_user(_('Invalid arguments, please select valid test environment and case!'), 'error')
             else:
                 self.message_user(_('Arguments field is required!'), 'error')
