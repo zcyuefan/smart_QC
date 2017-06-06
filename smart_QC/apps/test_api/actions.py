@@ -60,8 +60,11 @@ class RunCase(BaseActionView):
                     arguments_obj = json.loads(arguments_str)
                     selected_environment = arguments_obj.get('test_environment', '')
                     selected_case = arguments_obj.get('case', '')
+                    title = arguments_obj.get('title', '')
+                    description = arguments_obj.get('description', '')
                     if int(selected_environment.get('id')) and isinstance(selected_case, list):
-                        run_case(test_environment=selected_environment, case=selected_case)
+                        run_case(test_environment=selected_environment, case=selected_case, title=title,
+                                 description=description)
                         # run_case.delay(test_environment=selected_environment, case=selected_case)
                         self.message_user(_("Successfully add the task to running the %(count)d %(items)s.") % {
                             "count": n, "items": "case"

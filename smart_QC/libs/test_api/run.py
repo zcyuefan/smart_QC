@@ -33,7 +33,7 @@ INVOKE_LEVEL = {"from": 1, "current": 1, "to": 3}
 
 
 class Runner(object):
-    def __init__(self, test_environment, case):
+    def __init__(self, test_environment, case, title, description):
         self.valid_hosts = TestHost.objects.filter(testenvironment__id=test_environment.get('id')).values_list('name',
                                                                                                                'module')
         self.case_ids = [i.get('id') for i in case]
@@ -43,13 +43,13 @@ class Runner(object):
         # output to a file
         self.output_name = str(uuid.uuid1()) + '.html'
         self.output_path = os.path.join(os.path.dirname(settings.STATIC_ROOT), 'test_report/').replace('\\', '/')
-        self.title = 'My api test'
-        self.description = 'This demonstrates the report output by Smart_QC.'
+        # self.title = 'My api test'
+        # self.description = 'This demonstrates the report output by Smart_QC.'
         fp = open(self.output_path + self.output_name, 'wb')
         self.report = TestReport(
             stream=fp,
-            title=self.title,
-            description=self.description
+            title=title,
+            description=description
         )
         self.result = TestResult()
 

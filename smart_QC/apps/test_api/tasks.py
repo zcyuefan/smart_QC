@@ -19,14 +19,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 @shared_task
-def run_case(test_environment, case):
+def run_case(test_environment, case, title, description):
     """
     执行接口测试用例
     :param test_environment:测试环境
     :param case:测试用例
+    :param title:报告标题
+    :param description:报告描述
     :return:
     """
-    r = Runner(test_environment, case)
+    r = Runner(test_environment, case, title, description)
     r.run()
     r.stop()
     # valid_hosts = TestHost.objects.filter(testenvironment__id=test_environment.get('id')).values_list('name',
