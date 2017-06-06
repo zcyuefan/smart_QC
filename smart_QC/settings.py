@@ -193,13 +193,15 @@ CELERY_TIMEZONE = TIME_ZONE
 # CELERY_ALWAYS_EAGER = True
 CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 
-# eval safe
+# smart qc model constant
 EVAL_SAFE_MODULES = (
     ('random', 'random'),
     ('time', 'time'),
     ('date', 'date'),
     ('datetime', 'datetime'),
 )
+SMARTQC_REPORT_TITLE = "Http Api Test"
+SMARTQC_REPORT_DISCRIPTION = "This demonstrates the report output by Smart QC"
 
 # 管理员邮箱
 ADMINS = (

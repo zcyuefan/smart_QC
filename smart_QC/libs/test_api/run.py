@@ -66,8 +66,10 @@ class Runner(object):
                 # add replay log, update case status
                 self.scope.clear_temp()  # 清理当前scope
             self.result.add_result()
+            # 更新对应用例last_run_status
         self.report.generateReport(self.result)
         logger.info("Report generated:%s" % (self.output_path + self.output_name))
+        # 更新report记录
         return None
 
     def stop(self):

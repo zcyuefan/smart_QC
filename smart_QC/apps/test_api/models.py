@@ -359,12 +359,14 @@ Case._meta.get_field('host').null = True
 Case._meta.get_field('path').blank = True
 
 
-class Report(BaseModel):
+class Report(models.Model):
     """
     用例执行结果报告，用于后续报告和统计分析。加入其他测试功能后可将此模块移至公共模块
     """
     # task = models.ForeignKey(Task)
-    version = models.CharField(max_length=30, blank=True)
+    title = models.CharField(max_length=30, default=settings.SMARTQC_REPORT_TITLE)
+    description = models.TextField(max_length=255, default=settings.SMARTQC_REPORT_DISCRIPTION)
+    test_environment = models.CharField(max_length=40, blank=True)
     start_time = models.DateTimeField(blank=True)
     duration = models.DurationField(blank=True)
     total = models.PositiveSmallIntegerField(blank=True)
@@ -374,7 +376,7 @@ class Report(BaseModel):
     path = models.CharField(max_length=50, blank=True)
 
     def __str__(self):
-        return self.name
+        return self.title
 
     class Meta:
         verbose_name = 'Report'

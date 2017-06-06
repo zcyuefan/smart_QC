@@ -53,7 +53,6 @@ class RunCase(BaseActionView):
     def update_models(self, queryset):
         n = queryset.count()
         if n:
-            queryset.update(last_run_status='1')
             # 调用task 方法，进行异步请求
             arguments_str = self.request.POST.get('arguments', '')
             if arguments_str:

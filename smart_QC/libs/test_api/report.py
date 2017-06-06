@@ -757,9 +757,8 @@ class TestReport(Template_mixin):
     def _generate_report(self, result):
         rows = []
         # # format class description
-        # # name = "%s.%s" % (cls.__module__, cls.__name__)
-        name = "Api test suite xxx"
-        doc = "HAHA"
+        name = "Case completed"
+        doc = ""
         desc = doc and '%s: %s' % (name, doc) or name
         cid = 0
         row = self.REPORT_CLASS_TMPL % dict(
