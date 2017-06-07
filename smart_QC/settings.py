@@ -201,8 +201,8 @@ EVAL_SAFE_MODULES = (
     ('datetime', 'datetime'),
 )
 SMARTQC_REPORT_TITLE = "Http Api Test"
-SMARTQC_REPORT_DISCRIPTION = "This demonstrates the report output by Smart QC"
-
+SMARTQC_REPORT_DISCRIPTION = "Report output by Smart QC"
+SMARTQC_FAILURE_EXCEPTION = AssertionError  # determines which exception will be raised when the instance's assertion methods fail; test methods raising this exception will be deemed to have 'failed' rather than 'errored'.
 # 管理员邮箱
 ADMINS = (
     ('laixintao', '*******@163.com'),

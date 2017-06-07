@@ -36,12 +36,16 @@ $(document).ready(function () {
 function getAguments() {
     var env_id = $("#id_test_environment").val();
     var env_name = $("#id_test_environment").find("option:selected").text();
+    var title = $("#id_report_title").val();
+    var description = $("#id_report_description").val();
     var rows = $("#id_case").find("tr").length - 1;
     var aguments = {
         "test_environment":{
             "id": env_id,
             "name": env_name
         },
+        "title":title,
+        "description":description,
         "case":[]
     }
     for(var i=0;i<rows;i++){

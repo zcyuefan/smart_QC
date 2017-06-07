@@ -15,12 +15,8 @@ from .report import TestReport, TestResult
 from .variables import Scope, EvalExpression, ConstantStr
 import ast
 import requests
-# import json
+import traceback, sys, uuid, os, logging
 from django.conf import settings
-import uuid
-import os
-# import the logging library
-import logging
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -65,7 +61,7 @@ class Runner(object):
                 self._api_group_replay(c)
                 # add replay log, update case status
                 self.scope.clear_temp()  # 清理当前scope
-            self.result.add_result()
+            self.result.add_result(c.name, c.description)
             # 更新对应用例last_run_status
         self.report.generateReport(self.result)
         logger.info("Report generated:%s" % (self.output_path + self.output_name))
@@ -99,21 +95,58 @@ class Runner(object):
         for step in steps:
             self.result.current_case.start_step()
             if step.usage == 2:  # run "send_request" step
-                # pre request
-                request_parser = RequestParser(case, self.scope, self.valid_hosts)
-                request_parser.parse_all()
-                request_params = request_parser.final_params
-                logger.info('request_params: %s' % request_params)
-                # send request
-                req = requests.Request(**request_params).prepare()
-                res = self.session.send(req, verify=False)
-                self.scope.update('current_ns', {'response': res})  # 将运行结果插入
-                self.result.current_case.add_success(step.name, '22222')  #
+                try:
+                    # pre request
+                    request_parser = RequestParser(case, self.scope, self.valid_hosts)
+                    request_parser.parse_all()
+                    request_params = request_parser.final_params
+                    logger.info('request_params: %s' % request_params)
+                    # send request
+                    req = requests.Request(**request_params).prepare()
+                    res = self.session.send(req, verify=False)
+                    self.scope.update('current_ns', {'response': res})  # 将运行结果插入
+                    basic_output = """
+    Request:
+    %(method)s %(url)s
+    %(request_headers)s
+
+    %(data)s
+    Response:
+    %(status)s
+    %(response_headers)s
+    %(content)s
+                    """ % dict(
+                        method=res.request.method,
+                        url=res.url,
+                        status=str(res.status_code)+' '+res.reason,
+                        request_headers='\r\n'.join([k+':'+str(v) for k, v in res.request.headers.items()]),
+                        data=res.request.body,
+                        response_headers='\r\n'.join([k+':'+str(v) for k, v in res.headers.items()]),
+                        content=res.content
+                    )
+                    self.result.current_case.add_success(step.name, step.description, basic_output)
+                except Exception:
+                    logger.error(traceback.format_exc())
+                    self.result.current_case.add_error(step.name, step.description, sys.exc_info())
+                    continue
             else:  # run other step
                 step_runner = StepRunner(step, self.scope)
                 step_runner.run()
                 self.scope = step_runner.final_scope()
-                self.result.current_case.add_success(step.name, '22222')  #
+                basic_output = """
+Variable:%(variable)s
+Expression:
+%(expression)s
+Return Value: %(variable_value)s
+                                """ % dict(
+                    variable=step_runner.variable,
+                    expression=step_runner.expression,
+                    variable_value=step_runner.variable_value,
+                    error='',)
+                if not step_runner.error:
+                    self.result.current_case.add_success(step.name, step.description, basic_output)  #
+                else:
+                    print('dddddddddddd',step_runner.error)
             self.result.current_case.stop_step()
 
             # run teardown
@@ -174,6 +207,9 @@ class StepRunner(object):
         self.namespace = ast.literal_eval(step.namespace)
         self.expression = step.expression
         self.result = {}
+        self.error = []
+        self.variable_value = None
+
 
     def run(self):
         input_modules = self.modules if self.modules else []
@@ -182,10 +218,10 @@ class StepRunner(object):
         self.scope.current_ns.update((m, __import__(m)) for m in input_modules if m)
         self.scope.current_ns.update(self.namespace)
         evaled = EvalExpression(self.expression, self.scope)
-        variable_value = evaled.evaluate()
-        self.result[self.variable] = variable_value
+        self.expression, self.variable_value, self.error = evaled.evaluate()
+        self.result[self.variable] = self.variable_value
         self.scope = evaled.scope
-        logger.info("%s evaluate result is: %s %s" % (self.expression, type(variable_value), variable_value))
+        logger.info("%s evaluate result is: %s %s" % (self.expression, type(self.variable_value), self.variable_value))
 
     def final_scope(self):
         if self.step.variable:

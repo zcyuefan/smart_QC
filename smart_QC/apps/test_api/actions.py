@@ -15,7 +15,7 @@ from django.utils.translation import ugettext as _
 from django.utils.encoding import force_unicode
 from django.template.response import TemplateResponse
 from django.db import models
-
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from xadmin.views.base import filter_hook
 
@@ -60,11 +60,11 @@ class RunCase(BaseActionView):
                     arguments_obj = json.loads(arguments_str)
                     selected_environment = arguments_obj.get('test_environment', '')
                     selected_case = arguments_obj.get('case', '')
-                    title = arguments_obj.get('title', '')
-                    description = arguments_obj.get('description', '')
+                    report_title = arguments_obj.get('title', '')
+                    report_description = arguments_obj.get('description', '')
                     if int(selected_environment.get('id')) and isinstance(selected_case, list):
-                        run_case(test_environment=selected_environment, case=selected_case, title=title,
-                                 description=description)
+                        run_case(test_environment=selected_environment, case=selected_case, title=report_title,
+                                 description=report_description)
                         # run_case.delay(test_environment=selected_environment, case=selected_case)
                         self.message_user(_("Successfully add the task to running the %(count)d %(items)s.") % {
                             "count": n, "items": "case"
@@ -117,6 +117,8 @@ class RunCase(BaseActionView):
         title = _("Ready to running the selected cases?")
 
         test_environments = TestEnvironment.objects.all()
+        report_title = settings.SMARTQC_REPORT_TITLE
+        report_description = settings.SMARTQC_REPORT_DISCRIPTION
 
         context = self.get_context()
         execute_objects = [2, 3]
@@ -130,6 +132,8 @@ class RunCase(BaseActionView):
             "app_label": self.app_label,
             'action_checkbox_name': ACTION_CHECKBOX_NAME,
             "test_environments": test_environments,
+            'report_title': report_title,
+            "report_description": report_description,
         })
 
         # Display the confirmation page

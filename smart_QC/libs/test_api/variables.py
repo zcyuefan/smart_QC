@@ -85,7 +85,7 @@ class EvalExpression(StrWithVariable):
         aeval.symtable.update(self.scope.current_ns)
         result = aeval(self.parsed_str)
         self.scope.current_ns = aeval.symtable
-        return result
+        return aeval.expr, result, aeval.error
 
 
 class ConstantStr(StrWithVariable):

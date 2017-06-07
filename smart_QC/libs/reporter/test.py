@@ -19,7 +19,7 @@ class MyTest(unittest.TestCase):
     def test_sum(self):
         assert 1+1==2
     def test_minus(self):
-        a=[]
+        a=1
         b = a + 'd'
         assert 2 - 1 == 1
     def test_haha(self):

@@ -16,6 +16,7 @@ import sys
 import time
 import unittest
 from xml.sax import saxutils
+from django.conf import settings
 # import the logging library
 import logging
 
@@ -503,26 +504,28 @@ class TestResult(object):
         self.error_count = 0
         self.current_case = None
 
-        # result is a list of result in 2 tuple
+        # result is a list of result in 4 tuple
         # (
         #   result code (0: success; 1: fail; 2: error),
         #   CaseResult object,
+        # case_name,
+        # case_description
         # )
         self.result = []
 
     def start_case(self):
         self.current_case = CaseResult()
 
-    def add_result(self):
+    def add_result(self, case_name, case_description):
         if self.current_case.status == 0:
             self.success_count += 1
-            self.result.append((0, self.current_case))
+            self.result.append((0, self.current_case, case_name, case_description))
         elif self.current_case.status == 1:
             self.failure_count += 1
-            self.result.append((1, self.current_case))
-        elif self.current_case.status == 1:
+            self.result.append((1, self.current_case, case_name, case_description))
+        elif self.current_case.status == 2:
             self.error_count += 1
-            self.result.append((2, self.current_case))
+            self.result.append((2, self.current_case, case_name, case_description))
         else:
             print("case status is" + str(self.current_case.status))
 
@@ -541,7 +544,8 @@ class CaseResult(object):
         # result is a list of result in 4 tuple
         # (
         #   result code (0: success; 1: fail; 2: error),
-        #   Step object,
+        #   Step name,
+        #   step description,
         #   Test output (byte string),
         #   stack trace,
         # )
@@ -571,9 +575,9 @@ class CaseResult(object):
     def stop_step(self):
         self.complete_output()
 
-    def add_success(self, step, output):
+    def add_success(self, step, description, output):
         output += self.complete_output()
-        self.result.append((0, step, output, ''))
+        self.result.append((0, step, description, output, ''))
         if self.status == 4:
             self.status = 0
         if self.verbosity > 1:
@@ -583,11 +587,11 @@ class CaseResult(object):
         else:
             sys.stderr.write('.')
 
-    def add_error(self, step, err):
+    def add_error(self, step, description, err):
         self.errors.append((step, self._exc_info_to_string(err, step)))
         _, _exc_str = self.errors[-1]
         output = self.complete_output()
-        self.result.append((2, step, output, _exc_str))
+        self.result.append((2, step, description, output, _exc_str))
         self.status = 2
         if self.verbosity > 1:
             sys.stderr.write('E  ')
@@ -596,11 +600,11 @@ class CaseResult(object):
         else:
             sys.stderr.write('E')
 
-    def add_failure(self, step, err):
+    def add_failure(self, step, description, err):
         self.failures.append((step, self._exc_info_to_string(err, step)))
         _, _exc_str = self.failures[-1]
         output = self.complete_output()
-        self.result.append((1, step, output, _exc_str))
+        self.result.append((1, step, description, output, _exc_str))
         if self.status in (0, 4):
             self.status = 1
         if self.verbosity > 1:
@@ -617,7 +621,7 @@ class CaseResult(object):
         while tb and self._is_relevant_tb_level(tb):
             tb = tb.tb_next
 
-        if exctype is step.failureException:
+        if exctype is settings.SMARTQC_FAILURE_EXCEPTION:
             # Skip assert*() traceback levels
             length = self._count_relevant_tb_levels(tb)
             msgLines = traceback.format_exception(exctype, value, tb, length)
@@ -757,7 +761,7 @@ class TestReport(Template_mixin):
     def _generate_report(self, result):
         rows = []
         # # format class description
-        name = "Case completed"
+        name = "Test completed"
         doc = ""
         desc = doc and '%s: %s' % (name, doc) or name
         cid = 0
@@ -771,8 +775,8 @@ class TestReport(Template_mixin):
             cid='c%s' % (cid+1),
         )
         rows.append(row)
-        for tid, (test_code, test) in enumerate(result.result):
-            self._generate_report_test(rows, cid, tid, test_code, test)
+        for tid, (test_code, test, case_name, case_description) in enumerate(result.result):
+            self._generate_report_test(rows, cid, tid, test_code, test, case_name, case_description)
 
         report = self.REPORT_TMPL % dict(
             test_list=''.join(rows),
@@ -783,13 +787,9 @@ class TestReport(Template_mixin):
         )
         return report
 
-    def _generate_report_test(self, rows, cid, tid, n, t):
+    def _generate_report_test(self, rows, cid, tid, n, t, name, doc):
         # e.g. 'pt1.1', 'ft1.1', etc
         tid = (n == 0 and 'p' or 'f') + 't%s.%s' % (cid + 1, tid + 1)
-        # name = t.id().split('.')[-1]
-        # doc = t.shortDescription() or ""
-        name = "tttt"
-        doc = "TTTT"
         desc = doc and ('%s: %s' % (name, doc)) or name
 
         row = self.REPORT_TEST_TMPL % dict(
@@ -803,16 +803,16 @@ class TestReport(Template_mixin):
             status=self.STATUS[n],
         )
         rows.append(row)
-        for sid, (n, s, o, e) in enumerate(t.result):
-            self._generate_report_step(rows, tid, sid, n, s, o, e)
+        for sid, (n, s, d, o, e) in enumerate(t.result):
+            self._generate_report_step(rows, tid, sid, n, s, d, o, e)
 
-    def _generate_report_step(self, rows, tid, sid, n, t, o, e):
+    def _generate_report_step(self, rows, tid, sid, n, s, d, o, e):
         # e.g. 'pt1.1.1', 'ft1.1.1', etc
         sid = '%s.%s' % (tid, sid + 1)
         # name = t.id().split('.')[-1]
         # doc = t.shortDescription() or ""
-        name = "step hh"
-        doc = "000xxxx"
+        name = s
+        doc = d
         desc = doc and ('%s: %s' % (name, doc)) or name
 
         # o and e should be byte string because they are collected from stdout and stderr?
