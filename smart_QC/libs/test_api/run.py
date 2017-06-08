@@ -10,13 +10,14 @@
  调度并运行cases
 """
 from __future__ import unicode_literals
-from smart_QC.apps.test_api.models import TestHost, Case
+from smart_QC.apps.test_api.models import TestHost, Case, Report
 from .report import TestReport, TestResult
 from .variables import Scope, EvalExpression, ConstantStr
 import ast
 import requests
 import traceback, sys, uuid, os, logging
 from django.conf import settings
+from assertpy import assert_that
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -38,9 +39,10 @@ class Runner(object):
         self.scope = Scope()  # 包括全局、本地和当前
         # output to a file
         self.output_name = str(uuid.uuid1()) + '.html'
-        self.output_path = os.path.join(os.path.dirname(settings.STATIC_ROOT), 'test_report/').replace('\\', '/')
-        # self.title = 'My api test'
-        # self.description = 'This demonstrates the report output by Smart_QC.'
+        self.output_path = settings.MEDIA_ROOT + '/test_report/'
+        self.title = title
+        self.description = description
+        self.test_environment = test_environment.get('name', '')
         fp = open(self.output_path + self.output_name, 'wb')
         self.report = TestReport(
             stream=fp,
@@ -62,10 +64,18 @@ class Runner(object):
                 # add replay log, update case status
                 self.scope.clear_temp()  # 清理当前scope
             self.result.add_result(c.name, c.description)
-            # 更新对应用例last_run_status
+            c.last_run_status = self.result.current_case.status  # 更新对应用例last_run_status
+            c.save()  # 保存
         self.report.generateReport(self.result)
         logger.info("Report generated:%s" % (self.output_path + self.output_name))
         # 更新report记录
+        Report.objects.create(title=self.title, description=self.description,
+                              test_environment=self.test_environment, start_time=self.report.startTime,
+                              duration=self.report.stopTime - self.report.startTime,
+                              total=self.result.total_count,
+                              pass_count=self.result.success_count, fail_count=self.result.failure_count,
+                              error_count=self.result.error_count,
+                              path=settings.MEDIA_URL + 'test_report/' + self.output_name, )
         return None
 
     def stop(self):
@@ -127,7 +137,7 @@ class Runner(object):
                     self.result.current_case.add_success(step.name, step.description, basic_output)
                 except Exception:
                     logger.error(traceback.format_exc())
-                    self.result.current_case.add_error(step.name, step.description, sys.exc_info())
+                    self.result.current_case.add_error(step.name, step.description, '', sys.exc_info())
                     continue
             else:  # run other step
                 step_runner = StepRunner(step, self.scope)
@@ -135,10 +145,9 @@ class Runner(object):
                 self.scope = step_runner.final_scope()
                 basic_output = """
 Variable:%(variable)s
-Expression:
-%(expression)s
+Expression:%(expression)s
 Return Value: %(variable_value)s
-                                """ % dict(
+""" % dict(
                     variable=step_runner.variable,
                     expression=step_runner.expression,
                     variable_value=step_runner.variable_value,
@@ -146,7 +155,13 @@ Return Value: %(variable_value)s
                 if not step_runner.error:
                     self.result.current_case.add_success(step.name, step.description, basic_output)  #
                 else:
-                    print('dddddddddddd',step_runner.error)
+                    exc_name, exc_msg = step_runner.error[0].get_error()
+                    if exc_name == settings.SMARTQC_FAILURE_EXCEPTION.__name__:
+                        self.result.current_case.add_failure(step.name, step.description, basic_output,
+                                                             'Exception:' + exc_msg)
+                    else:
+                        self.result.current_case.add_error(step.name, step.description, basic_output,
+                                                           'Exception:' + exc_msg)
             self.result.current_case.stop_step()
 
             # run teardown
@@ -216,6 +231,7 @@ class StepRunner(object):
         self.scope.current_ns.update(self.scope.global_ns)
         self.scope.current_ns.update(self.scope.local_ns)
         self.scope.current_ns.update((m, __import__(m)) for m in input_modules if m)
+        self.scope.current_ns.update((assert_that, __import__('assertpy', globals(), locals(), [str('assert_that')])))
         self.scope.current_ns.update(self.namespace)
         evaled = EvalExpression(self.expression, self.scope)
         self.expression, self.variable_value, self.error = evaled.evaluate()

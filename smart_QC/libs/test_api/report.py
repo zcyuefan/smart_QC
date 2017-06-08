@@ -502,6 +502,7 @@ class TestResult(object):
         self.success_count = 0
         self.failure_count = 0
         self.error_count = 0
+        self.total_count = 0
         self.current_case = None
 
         # result is a list of result in 4 tuple
@@ -517,6 +518,7 @@ class TestResult(object):
         self.current_case = CaseResult()
 
     def add_result(self, case_name, case_description):
+        self.total_count += 1
         if self.current_case.status == 0:
             self.success_count += 1
             self.result.append((0, self.current_case, case_name, case_description))
@@ -539,7 +541,7 @@ class CaseResult(object):
         self.buffer = False
         self.errors = []
         self.failures = []
-        self.status = 4  # not run
+        self.status = 3  # not run
 
         # result is a list of result in 4 tuple
         # (
@@ -578,7 +580,7 @@ class CaseResult(object):
     def add_success(self, step, description, output):
         output += self.complete_output()
         self.result.append((0, step, description, output, ''))
-        if self.status == 4:
+        if self.status == 3:
             self.status = 0
         if self.verbosity > 1:
             sys.stderr.write('ok ')
@@ -587,10 +589,13 @@ class CaseResult(object):
         else:
             sys.stderr.write('.')
 
-    def add_error(self, step, description, err):
-        self.errors.append((step, self._exc_info_to_string(err, step)))
+    def add_error(self, step, description, output, err_msg='', err=None):
+        if err_msg:
+            self.errors.append((step, err_msg))
+        else:
+            self.errors.append((step, self._exc_info_to_string(err, step)))
         _, _exc_str = self.errors[-1]
-        output = self.complete_output()
+        output += self.complete_output()
         self.result.append((2, step, description, output, _exc_str))
         self.status = 2
         if self.verbosity > 1:
@@ -600,12 +605,12 @@ class CaseResult(object):
         else:
             sys.stderr.write('E')
 
-    def add_failure(self, step, description, err):
-        self.failures.append((step, self._exc_info_to_string(err, step)))
+    def add_failure(self, step, description, output, err_msg):
+        self.failures.append((step, err_msg))
         _, _exc_str = self.failures[-1]
-        output = self.complete_output()
+        output += self.complete_output()
         self.result.append((1, step, description, output, _exc_str))
-        if self.status in (0, 4):
+        if self.status in (0, 3):
             self.status = 1
         if self.verbosity > 1:
             sys.stderr.write('F  ')
@@ -821,13 +826,13 @@ class TestReport(Template_mixin):
             # uo = unicode(o.encode('string_escape'))
             uo = o.decode('latin-1')
         else:
-            uo = o
+            uo = str(o).decode('latin-1')
         if isinstance(e, str):
             # TODO: some problem with 'string_escape': it escape \n and mess up formating
             # ue = unicode(e.encode('string_escape'))
             ue = e.decode('latin-1')
         else:
-            ue = e
+            ue = str(e).decode('latin-1')
 
         script = self.REPORT_TEST_OUTPUT_TMPL % dict(
             id=sid,

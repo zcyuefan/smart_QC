@@ -12,6 +12,7 @@ file doc
 from __future__ import unicode_literals
 import unittest
 import BSTestRunner
+from assertpy import assert_that
 
 class MyTest(unittest.TestCase):
     def setUp(self):
@@ -22,15 +23,7 @@ class MyTest(unittest.TestCase):
         a=1
         b = a + 'd'
         assert 2 - 1 == 1
-    def test_haha(self):
-        try:
-            assert 2 - 0 == 1, 'tytyyutyuytyuyty'
-        except AssertionError:
-            raise AssertionError
-        except:
-            raise Exception
-        else:
-            pass
+        self.assertEqual(1,1)
 
     def test_oo(self):
         assert 2 - 0 == 1, 'tytyyutyuytyuyty'

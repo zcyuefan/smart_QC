@@ -141,11 +141,11 @@ class APITemplateAdmin(object):
 class CaseAdmin(object):
     # exclude = []
     form = CaseAdminForm
-    def list_display_options(self, instance):  # display list option
-        # instance.last_run_status = '1'
-        # instance.save()
-        return "<a title = 'Run this case' onclick='alert(%s)'>" \
-               "<i class='fa fa-play-circle fa-lg'></i></a>" % instance.id
+    # def list_display_options(self, instance):  # display list option
+    #     # instance.last_run_status = '1'
+    #     # instance.save()
+    #     return "<a title = 'Run this case' onclick='alert(%s)'>" \
+    #            "<i class='fa fa-play-circle fa-lg'></i></a>" % instance.id
     actions = [RunCase, FailCase, BatchChangeAction, BatchCopyAction]
     # batch_fields = [f.name for f in Case._meta.get_fields()]
     batch_fields = ['template', 'case_type', 'invoke_cases', 'description', 'tag', 'method', 'protocol',
@@ -154,9 +154,9 @@ class CaseAdmin(object):
                     'tag': 'm2m_dropdown_with_help_text',
                     'step': 'sorted_m2m',
                     }
-    list_display_options.short_description = "options"
-    list_display_options.allow_tags = True
-    list_display_options.is_column = True
+    # list_display_options.short_description = "options"
+    # list_display_options.allow_tags = True
+    # list_display_options.is_column = True
     list_select_related = True
     # list_display = ('record_module', )
     model_icon = 'fa fa-code'
@@ -164,7 +164,7 @@ class CaseAdmin(object):
     list_editable = ('name', 'case_type', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',  'data',)
     refresh_times = (3, 5)
     list_display = ('id', 'name', 'case_type', 'invoke_cases', 'tag', 'method', 'protocol', 'host', 'path',
-                    'last_run_status', 'list_display_options',)
+                    'last_run_status',)
     list_display_links = ('name',)
     readonly_fields = ('last_run_status',)
     search_fields = ('id', 'name', 'case_type', 'invoke_cases', 'tag', 'method', 'protocol', 'host', 'path',
@@ -208,11 +208,39 @@ class CaseAdmin(object):
 
 
 class ReportAdmin(object):
-    # list_display = ('record_module', )
+    def view_report(self, instance):
+        return "<a href='%s' target='_blank'>Open</a>" % instance.path
+
+    view_report.short_description = "detail"
+    view_report.allow_tags = True
+    view_report.is_column = True
+
     list_select_related = True
     model_icon = 'fa fa-file'
     reversion_enable = True
-    # actions = [BatchCopyAction, ]
+    list_display = ['title', 'test_environment', 'start_time', 'duration', 'total', 'pass_count', 'fail_count', 'error_count', 'view_report', 'description']
+    readonly_fields = ['title', 'test_environment', 'start_time', 'duration', 'total', 'pass_count', 'fail_count', 'error_count', 'path', 'description']
+    search_fields = ['title', 'test_environment', 'start_time', 'duration', 'total', 'pass_count', 'fail_count',
+                       'error_count', 'path', 'description']
+    list_filter = ['title', 'test_environment', 'start_time', 'duration', 'total', 'pass_count', 'fail_count',
+                     'error_count', 'path', 'description']
+    def _chart_x(self, obj):
+        return obj.title + ": " + obj.start_time.strftime('%Y-%m-%d %H:%M:%S')
+        # return obj.start_time
+        # return obj.start_time.strftime('%Y-%m-%d %H:%M:%S')
+    data_charts = {
+        "test_result_trend": {"title": u"Test Result Trend", "x-field": "_chart_x",
+                              # "y-field": ("total",),
+                              "y-field": ("fail_count", "total", "error_count", "pass_count", ),
+                              "order": ('start_time',),
+                              "option": {
+                                  # "series": {"bars": {"align": "center", "barWidth": 0.8, 'show': True}},
+                                  "series": {"bars": {"align": "center", "barWidth": 0.8, 'show': False}},
+                                  "xaxis": {"aggregate": "", "mode": "categories"},
+                              },
+                              },
+        # "avg_count": {'title': u"Avg Report", "x-field": "date", "y-field": ('avg_count',), "order": ('date',)}
+    }
 
 
 class StepAdmin(object):
