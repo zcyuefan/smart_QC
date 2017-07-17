@@ -244,10 +244,8 @@ class Step(BaseModel):
                                         expression evaluation. Syntax: ${variable}""")
     global_scope = models.BooleanField(default=False, help_text="Available to referenced by other case.")
     modules = MultiSelectField(choices=settings.EVAL_SAFE_MODULES,
-                               null=True, blank=True,
+                               null=True, blank=True, default='assertpy',
                                help_text="Python modules to be imported and added to the evaluation namespace.")
-    # modules = models.CharField(max_length=255, blank=True, help_text="""Used to specify a comma separated list of
-    # Python modules to be imported and added to the evaluation namespace.""")
     namespace = models.CharField(max_length=255, blank=True, default='{}', help_text="""Used to pass a custom evaluation namespace
     as a dictionary. Possible ``modules`` are added to this namespace.""")
     expression = models.TextField(blank=True,
@@ -380,7 +378,7 @@ class Report(models.Model):
 
     class Meta:
         verbose_name = 'Report'
-        verbose_name_plural = verbose_name
+        verbose_name_plural = verbose_name + 's'
 
 # class PICTScript(models.Model):
 #     """

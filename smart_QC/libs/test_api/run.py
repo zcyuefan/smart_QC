@@ -231,7 +231,7 @@ class StepRunner(object):
         self.scope.current_ns.update(self.scope.global_ns)
         self.scope.current_ns.update(self.scope.local_ns)
         self.scope.current_ns.update((m, __import__(m)) for m in input_modules if m)
-        self.scope.current_ns.update((assert_that, __import__('assertpy', globals(), locals(), [str('assert_that')])))
+        # self.scope.current_ns['assert_that'] = __import__('assertpy', globals(), locals(), [str('assert_that')])
         self.scope.current_ns.update(self.namespace)
         evaled = EvalExpression(self.expression, self.scope)
         self.expression, self.variable_value, self.error = evaled.evaluate()

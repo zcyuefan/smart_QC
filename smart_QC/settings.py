@@ -199,6 +199,7 @@ EVAL_SAFE_MODULES = (
     ('time', 'time'),
     ('date', 'date'),
     ('datetime', 'datetime'),
+    ('assertpy', 'assertpy')
 )
 SMARTQC_REPORT_TITLE = "Http Api Test"
 SMARTQC_REPORT_DISCRIPTION = "Report output by Smart QC"

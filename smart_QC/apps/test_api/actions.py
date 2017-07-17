@@ -65,7 +65,8 @@ class RunCase(BaseActionView):
                     if int(selected_environment.get('id')) and isinstance(selected_case, list):
                         run_case(test_environment=selected_environment, case=selected_case, title=report_title,
                                  description=report_description)
-                        # run_case.delay(test_environment=selected_environment, case=selected_case)
+                        # run_case.delay(test_environment=selected_environment, case=selected_case, title=report_title,
+                        #                 description=report_description)
                         self.message_user(_("Successfully add the task to running the %(count)d %(items)s.") % {
                             "count": n, "items": "case"
                         }, 'success')
@@ -172,4 +173,7 @@ except TypeError as e:
             for f in m2m_field_names:
                 index = m2m_field_names.index(f)
                 eval("entry.%s.set(old_m2m_entries[%s])" % (f, index))
+        self.message_user(_("Successfully copy the %(count)d %(items)s.") % {
+            "count": queryset.count(), "items": "case"
+        }, 'success')
 
