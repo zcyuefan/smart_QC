@@ -95,6 +95,7 @@ class MaintainLog(models.Model):
     class Meta:
         verbose_name = u"Maintain Log"
         verbose_name_plural = verbose_name
+        # ordering = ['maintain_type', ]
 
 
 class HostGroup(models.Model):

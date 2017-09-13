@@ -148,10 +148,10 @@ class CaseAdmin(object):
     #            "<i class='fa fa-play-circle fa-lg'></i></a>" % instance.id
     actions = [RunCase, FailCase, BatchChangeAction, BatchCopyAction]
     # batch_fields = [f.name for f in Case._meta.get_fields()]
-    batch_fields = ['template', 'case_type', 'invoke_cases', 'description', 'tag', 'method', 'protocol',
+    batch_fields = ['template', 'case_type', 'invoke_cases', 'description', 'tags', 'method', 'protocol',
                     'host', 'path', 'request_headers', 'params', 'data', 'step']
     style_fields = {'invoke_cases': 'sorted_m2m',
-                    'tag': 'm2m_dropdown_with_help_text',
+                    'tags': 'm2m_dropdown_with_help_text',
                     'step': 'sorted_m2m',
                     }
     # list_display_options.short_description = "options"
@@ -163,13 +163,13 @@ class CaseAdmin(object):
     reversion_enable = True
     list_editable = ('name', 'case_type', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',  'data',)
     refresh_times = (3, 5)
-    list_display = ('id', 'name', 'case_type', 'invoke_cases', 'tag', 'method', 'protocol', 'host', 'path',
+    list_display = ('id', 'name', 'case_type', 'invoke_cases', 'tags', 'method', 'protocol', 'host', 'path',
                     'last_run_status',)
     list_display_links = ('name',)
     readonly_fields = ('last_run_status',)
-    search_fields = ('id', 'name', 'case_type', 'invoke_cases', 'tag', 'method', 'protocol', 'host', 'path',
+    search_fields = ('id', 'name', 'case_type', 'invoke_cases', 'tags', 'method', 'protocol', 'host', 'path',
                      'create_time', 'modify_time', 'last_run_status',)
-    list_filter = ['id', 'name', 'case_type', 'invoke_cases', 'tag', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',
+    list_filter = ['id', 'name', 'case_type', 'invoke_cases', 'tags', 'method', 'protocol', 'host', 'path', 'request_headers', 'params',
                    'data', 'create_time', 'modify_time', 'last_run_status']
     # ('service_type', xadmin.filters.MultiSelectFieldListFilter)]
 
@@ -186,7 +186,7 @@ class CaseAdmin(object):
             Fieldset('Extend Fields',
                      TabHolder(
                          Tab('About case',
-                             'description', 'tag',
+                             'description', 'tags',
                              ),
                          Tab('API detail',
                              'method',
@@ -218,14 +218,18 @@ class ReportAdmin(object):
     list_select_related = True
     model_icon = 'fa fa-file'
     reversion_enable = True
-    list_display = ['title', 'test_environment', 'start_time', 'duration', 'total', 'pass_count', 'fail_count', 'error_count', 'view_report', 'description']
-    readonly_fields = ['title', 'test_environment', 'start_time', 'duration', 'total', 'pass_count', 'fail_count', 'error_count', 'path', 'description']
-    search_fields = ['title', 'test_environment', 'start_time', 'duration', 'total', 'pass_count', 'fail_count',
+    list_display = ['id', 'title', 'test_environment', 'start_time', 'duration', 'total', 'pass_count', 'fail_count',
+                    'error_count', 'view_report', 'description']
+    readonly_fields = ['title', 'test_environment', 'start_time', 'duration', 'total', 'pass_count', 'fail_count',
                        'error_count', 'path', 'description']
-    list_filter = ['title', 'test_environment', 'start_time', 'duration', 'total', 'pass_count', 'fail_count',
+    search_fields = ['title', 'test_environment', 'start_time', 'duration', 'total', 'pass_count', 'fail_count',
                      'error_count', 'path', 'description']
+    list_filter = ['title', 'test_environment', 'start_time', 'duration', 'total', 'pass_count', 'fail_count',
+                   'error_count', 'path', 'description']
+
     def _chart_x(self, obj):
-        return obj.title + ": " + obj.start_time.strftime('%Y-%m-%d %H:%M:%S')
+        return '#%d' % obj.id
+        # return obj.title + ": " + obj.start_time.strftime('%Y-%m-%d %H:%M:%S')
         # return obj.start_time
         # return obj.start_time.strftime('%Y-%m-%d %H:%M:%S')
     data_charts = {

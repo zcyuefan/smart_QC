@@ -87,6 +87,12 @@ class MaintainInline(object):
     model = MaintainLog
     extra = 1
     style = 'accordion'
+    exclude = ['operator', 'note',]
+    can_order = True
+    ordering = ['-maintain_type',]
+
+    # def has_add_permission(self):
+    #     return True
 
 
 class IDCAdmin(object):
@@ -104,6 +110,7 @@ class IDCAdmin(object):
 
     actions = [BatchChangeAction, ]
     batch_fields = ('contact', 'groups')
+    ordering = ('-name', )
 
 
 class HostAdmin(object):

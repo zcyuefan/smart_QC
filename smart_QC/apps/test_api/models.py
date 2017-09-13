@@ -309,7 +309,7 @@ class Case(BaseModel, RequestModel):
     case_type = models.SmallIntegerField(default=0, choices=CASE_TYPE)
     invoke_cases = SortedManyToManyField('self', symmetrical=False, blank=True)
     template = models.ForeignKey(APITemplate, blank=True, null=True)
-    tag = models.ManyToManyField(CaseTag, blank=True)
+    tags = models.ManyToManyField(CaseTag, blank=True)
     # params,request_headers,data,setup,teardown支持参数化
     step = SortedManyToManyField(Step, blank=True,
                                  default=get_default_step,

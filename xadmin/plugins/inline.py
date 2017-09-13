@@ -308,7 +308,7 @@ class GenericInlineModelAdmin(InlineModelAdmin):
             "can_order": False,
             "max_num": self.max_num,
             "exclude": exclude,
-            'fields': forms.ALL_FIELDS
+            'fields': forms.ALL_FIELDS,
         }
         defaults.update(kwargs)
 
